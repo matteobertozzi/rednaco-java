@@ -201,8 +201,8 @@ public final class ArrayUtil {
     void accept(T[] buf, int off, int len);
   }
 
-  public interface ByteArrayConsumer {
-    void accept(byte[] buf, int off, int len);
+  public interface ShortArrayConsumer {
+    void accept(short[] buf, int off, int len);
   }
 
   public interface IntArrayConsumer {
@@ -313,6 +313,23 @@ public final class ArrayUtil {
       }
     }
     return defaultType;
+  }
+
+  // ================================================================================
+  //  PUBLIC Array copy helpers
+  // ================================================================================
+  public static void copy(final long[] dstArray, final int dstIndex, final long[] srcArray, final int srcFromIndex, final int srcToIndex) {
+    for (int i = 0, len = srcToIndex - srcFromIndex; i < len; ++i) {
+      dstArray[dstIndex + i] = srcArray[srcFromIndex + i];
+    }
+  }
+
+  public static void copyStride(final long[] dstArray, final int dstIndex, final long[] srcArray, final int srcIndex, final int length, final int stride) {
+    int index = 0;
+    for (int i = 0; i < length; ++i) {
+      dstArray[dstIndex + i] = srcArray[srcIndex + index];
+      index += stride;
+    }
   }
 
   // ================================================================================

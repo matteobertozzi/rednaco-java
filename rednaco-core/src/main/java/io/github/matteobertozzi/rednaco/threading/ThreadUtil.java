@@ -20,6 +20,7 @@ package io.github.matteobertozzi.rednaco.threading;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -35,8 +36,8 @@ public final class ThreadUtil {
   }
 
   @FunctionalInterface
-  public interface RunnableWithException {
-    void run() throws Exception;
+  public interface ExecutableFunction {
+    void run() throws Throwable;
   }
 
   // ================================================================================
@@ -119,6 +120,17 @@ public final class ThreadUtil {
     if (ListUtil.isEmpty(threads)) return;
     for (final Thread thread: threads) {
       shutdown(thread, unit.toMillis(joinWait));
+    }
+  }
+
+  // ================================================================================
+  //  Queue related
+  // ================================================================================
+  public static <T> T poll(final BlockingQueue<T> queue, final int timeout, final TimeUnit unit) {
+    try {
+      return queue.poll(timeout, unit);
+    } catch (final InterruptedException e) {
+      return null;
     }
   }
 

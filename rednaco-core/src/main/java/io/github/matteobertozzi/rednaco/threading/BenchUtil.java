@@ -21,18 +21,14 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import io.github.matteobertozzi.rednaco.strings.HumansUtil;
+import io.github.matteobertozzi.rednaco.threading.ThreadUtil.ExecutableFunction;
 
 public final class BenchUtil {
   private BenchUtil() {
     // no-op
   }
 
-  @FunctionalInterface
-  public interface BenchRunnable {
-    void run() throws Exception;
-  }
-
-  public static void run(final String name, final long count, final BenchRunnable runnable) throws Exception {
+  public static void run(final String name, final long count, final ExecutableFunction runnable) throws Throwable {
     final long startTime = System.nanoTime();
     for (long i = 0; i < count; ++i) {
       runnable.run();
@@ -43,7 +39,7 @@ public final class BenchUtil {
       + " " + HumansUtil.humanRate(count, elapsed, TimeUnit.NANOSECONDS));
   }
 
-  public static void run(final String name, final Duration duration, final BenchRunnable runnable) throws Exception {
+  public static void run(final String name, final Duration duration, final ExecutableFunction runnable) throws Throwable {
     final long startTime = System.nanoTime();
     final long expectedTime = startTime + duration.toNanos();
     long count = 0;

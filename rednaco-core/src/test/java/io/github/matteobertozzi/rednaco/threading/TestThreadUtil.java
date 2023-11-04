@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Timeout;
 public class TestThreadUtil {
   @Test
   @Timeout(value = 5, unit = TimeUnit.SECONDS)
-  public void testCondition() throws Exception {
+  public void testCondition() {
     final AtomicBoolean running = new AtomicBoolean(true);
     final AtomicInteger events = new AtomicInteger();
     final ReentrantLock lock = new ReentrantLock();

@@ -33,6 +33,10 @@ public final class BytesUtil {
     // no-op
   }
 
+  public interface ByteArrayConsumer {
+    void accept(byte[] buf, int off, int len);
+  }
+
   // ================================================================================
   //  Bytes Length util
   // ================================================================================
