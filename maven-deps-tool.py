@@ -102,6 +102,8 @@ def fetch_remove_versions(dep: Dependency) -> dict[VersionKey, list[BuildVersion
   try:
     with request.urlopen(MVN_REPO_URL + pkg) as response:
         html = response.read().decode('utf-8')
+  except KeyboardInterrupt:
+    raise
   except:
     return {}
 
@@ -113,6 +115,8 @@ def fetch_remove_versions(dep: Dependency) -> dict[VersionKey, list[BuildVersion
     try:
       version = version_parse(v[0])
       minors.setdefault(VersionKey(version.major, version.minor), []).append(version)
+    except KeyboardInterrupt:
+      raise
     except:
       pass
 

@@ -229,11 +229,20 @@ public final class BytesUtil {
     if (len == 0) return hex;
 
     for (int i = 0; i < len; ++i) {
-      final int val = buf[off + i] & 0xff;
-      hex.append(StringUtil.HEX_DIGITS[(val >> 4) & 0xf]);
-      hex.append(StringUtil.HEX_DIGITS[val & 0xf]);
+      addHexString(hex, buf[off + i]);
     }
     return hex;
+  }
+
+  public static StringBuilder addHexString(final StringBuilder builder, final int value) {
+    final int val = value & 0xff;
+    builder.append(StringUtil.HEX_DIGITS[(val >> 4) & 0xf]);
+    builder.append(StringUtil.HEX_DIGITS[val & 0xf]);
+    return builder;
+  }
+
+  public static StringBuilder addHexString(final StringBuilder builder, final long value) {
+    return addHexString(builder, (int)(value & 0xff));
   }
 
   // ================================================================================

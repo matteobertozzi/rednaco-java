@@ -20,6 +20,8 @@ package io.github.matteobertozzi.rednaco.collections.maps;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public final class MapUtil {
@@ -68,6 +70,30 @@ public final class MapUtil {
     final HashMap<K, V> map = HashMap.newHashMap(input.size());
     for (final T value: input) {
       map.put(keyMapper.apply(value), valueMapper.apply(value));
+    }
+    return map;
+  }
+
+  public static <K, IV, OV> Map<K, OV> newHashMapFrom(final Map<K, IV> input, final Function<IV, OV> valueMapper) {
+    final HashMap<K, OV> map = HashMap.newHashMap(input.size());
+    for (final Entry<K, IV> entry: input.entrySet()) {
+      map.put(entry.getKey(), valueMapper.apply(entry.getValue()));
+    }
+    return map;
+  }
+
+  public static <IK, IV, OK, OV> Map<OK, OV> newHashMapFrom(final Map<IK, IV> input, final Function<IK, OK> keyMapper, final Function<IV, OV> valueMapper) {
+    final HashMap<OK, OV> map = HashMap.newHashMap(input.size());
+    for (final Entry<IK, IV> entry: input.entrySet()) {
+      map.put(keyMapper.apply(entry.getKey()), valueMapper.apply(entry.getValue()));
+    }
+    return map;
+  }
+
+  public static <IK, IV, OK, OV> Map<OK, OV> newHashMapFrom(final Map<IK, IV> input, final BiFunction<IK, IV, OK> keyMapper, final Function<IV, OV> valueMapper) {
+    final HashMap<OK, OV> map = HashMap.newHashMap(input.size());
+    for (final Entry<IK, IV> entry: input.entrySet()) {
+      map.put(keyMapper.apply(entry.getKey(), entry.getValue()), valueMapper.apply(entry.getValue()));
     }
     return map;
   }

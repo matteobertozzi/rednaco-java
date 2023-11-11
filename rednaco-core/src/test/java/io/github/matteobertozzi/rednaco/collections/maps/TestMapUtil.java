@@ -19,6 +19,7 @@ package io.github.matteobertozzi.rednaco.collections.maps;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -61,5 +62,33 @@ public class TestMapUtil {
     Assertions.assertEquals("bbb", itemsMap.get(2));
     Assertions.assertEquals("ccc", itemsMap.get(3));
     Assertions.assertNull(itemsMap.get(4));
+
+    final Map<String, Integer> itemsSKeyIVal = MapUtil.newHashMapFrom(itemsSKey, TestItem::iVal);
+    Assertions.assertEquals(3, itemsSKeyIVal.size());
+    Assertions.assertSame(1, itemsSKeyIVal.get("aaa"));
+    Assertions.assertSame(2, itemsSKeyIVal.get("bbb"));
+    Assertions.assertSame(3, itemsSKeyIVal.get("ccc"));
+    Assertions.assertNull(itemsSKeyIVal.get("ddd"));
+
+    final Map<TestItem, TestItem> itemItemMap = MapUtil.newHashMapFrom(items, Function.identity());
+    Assertions.assertEquals(3, itemsSKey.size());
+    Assertions.assertSame(items.get(0), itemItemMap.get(items.get(0)));
+    Assertions.assertSame(items.get(1), itemItemMap.get(items.get(1)));
+    Assertions.assertSame(items.get(2), itemItemMap.get(items.get(2)));
+
+    final Map<String, TestItem> itemSKey2 = MapUtil.newHashMapFrom(itemItemMap, TestItem::sVal, Function.identity());
+    Assertions.assertEquals(itemsSKey, itemSKey2);
+    Assertions.assertEquals(3, itemsSKey.size());
+    Assertions.assertSame(items.get(0), itemsSKey.get("aaa"));
+    Assertions.assertSame(items.get(1), itemsSKey.get("bbb"));
+    Assertions.assertSame(items.get(2), itemsSKey.get("ccc"));
+    Assertions.assertNull(itemsSKey.get("ddd"));
+
+    final Map<Integer, TestItem> itemIKey = MapUtil.newHashMapFrom(itemsSKey, (k, v) -> v.iVal(), Function.identity());
+    Assertions.assertEquals(3, itemIKey.size());
+    Assertions.assertSame(items.get(0), itemIKey.get(1));
+    Assertions.assertSame(items.get(1), itemIKey.get(2));
+    Assertions.assertSame(items.get(2), itemIKey.get(3));
+    Assertions.assertNull(itemIKey.get(4));
   }
 }

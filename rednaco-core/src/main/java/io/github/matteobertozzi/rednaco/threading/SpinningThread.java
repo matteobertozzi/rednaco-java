@@ -17,6 +17,7 @@
 
 package io.github.matteobertozzi.rednaco.threading;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -64,6 +65,18 @@ public abstract class SpinningThread extends Thread implements StopSignal {
   protected void runLoop() {
     while (isRunning()) {
       process();
+    }
+  }
+
+  protected boolean waitFor(final long time, final TimeUnit unit) {
+    lock.lock();
+    try {
+      return this.waitCond.await(time, unit);
+    } catch (final InterruptedException e) {
+      Thread.interrupted();
+      return false;
+    } finally {
+      lock.unlock();
     }
   }
 
