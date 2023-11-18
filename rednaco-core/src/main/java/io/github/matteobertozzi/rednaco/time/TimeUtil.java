@@ -19,7 +19,11 @@ package io.github.matteobertozzi.rednaco.time;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
+import io.github.matteobertozzi.rednaco.strings.HumansUtil;
+import io.github.matteobertozzi.rednaco.threading.BenchUtil;
 
 public final class TimeUtil {
   private static ClockProvider CLOCK_INSTANCE = SystemClock.INSTANCE;
@@ -34,6 +38,12 @@ public final class TimeUtil {
 
   public static long currentEpochNanos() {
     return CLOCK_INSTANCE.epochNanos();
+  }
+
+  public static long epochNanos(final Instant instant) {
+    final long seconds = instant.getEpochSecond();
+    final long nanosFromSecond = instant.getNano();
+    return (seconds * 1_000_000_000L) + nanosFromSecond;
   }
 
   // =====================================================================================
@@ -63,8 +73,12 @@ public final class TimeUtil {
     setClockProvider(SystemClock.INSTANCE);
   }
 
-  private static final class SystemClock implements ClockProvider {
-    private static final SystemClock INSTANCE = new SystemClock();
+  public static final class SystemClock implements ClockProvider {
+    public static final SystemClock INSTANCE = new SystemClock();
+
+    private SystemClock() {
+      // no-op
+    }
 
     @Override
     public long epochMillis() {
@@ -73,10 +87,22 @@ public final class TimeUtil {
 
     @Override
     public long epochNanos() {
-      final Instant now = Instant.now();
-      final long seconds = now.getEpochSecond();
-      final long nanosFromSecond = now.getNano();
-      return (seconds * 1_000_000_000L) + nanosFromSecond;
+      return TimeUtil.epochNanos(Instant.now());
+    }
+  }
+
+  public static final class CachedSystemClock implements ClockProvider {
+    private final long refEpochNanos = System.currentTimeMillis() * 1_000_000L;
+    private final long refNanos = System.nanoTime();
+
+    @Override
+    public long epochMillis() {
+      return epochNanos() / 1_000_000L;
+    }
+
+    @Override
+    public long epochNanos() {
+      return refEpochNanos + (System.nanoTime() - refNanos);
     }
   }
 
@@ -119,6 +145,38 @@ public final class TimeUtil {
 
     public void decTime(final Duration duration) {
       this.nanos -= duration.toNanos();
+    }
+  }
+
+  public static void main(final String[] args) throws Throwable {
+    final CachedSystemClock cachedClock = new CachedSystemClock();
+    final SystemClock sysClock = SystemClock.INSTANCE;
+
+    final long NRUNS = 20_000_000L;
+    BenchUtil.run("System.nanoTime()         ", NRUNS, System::nanoTime);
+    BenchUtil.run("sysClock.epochNanos()     ", NRUNS, sysClock::epochNanos);
+    BenchUtil.run("cachedClock.epochNanos()  ", NRUNS, cachedClock::epochNanos);
+    BenchUtil.run("System.currentTimeMillis()", NRUNS, System::currentTimeMillis);
+    BenchUtil.run("sysClock.epochMillis()    ", NRUNS, sysClock::epochMillis);
+    BenchUtil.run("cachedClock.epochMillis() ", NRUNS, cachedClock::epochMillis);
+
+    final Random rand = new Random();
+    final long startTime = System.nanoTime();
+    while ((System.nanoTime() - startTime) < TimeUnit.MINUTES.toNanos(10)) {
+      final long cachedEpochNanos = cachedClock.epochNanos();
+      final long sysEpochNanos = sysClock.epochNanos();
+      final long deltaNanos = Math.abs(cachedEpochNanos - sysEpochNanos);
+      if (deltaNanos > 200_000) {
+        System.out.println(" -> delta nanos too large: " + HumansUtil.humanTimeNanos(deltaNanos) + " -> " + deltaNanos + "ns");
+      }
+
+      final long cachedEpochMillis = cachedClock.epochMillis();
+      final long sysEpochMillis = sysClock.epochMillis();
+      final long deltaMillis = Math.abs(cachedEpochMillis - sysEpochMillis);
+      if (deltaMillis > 5) {
+        System.out.println(" -> delta millis too large: " + HumansUtil.humanTimeMillis(deltaMillis));
+      }
+      Thread.sleep(rand.nextInt(1, 1000));
     }
   }
 }

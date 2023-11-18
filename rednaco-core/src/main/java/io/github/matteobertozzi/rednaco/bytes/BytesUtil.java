@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
+import io.github.matteobertozzi.rednaco.strings.Base16;
 import io.github.matteobertozzi.rednaco.strings.StringUtil;
 
 public final class BytesUtil {
@@ -226,23 +227,8 @@ public final class BytesUtil {
   }
 
   public static StringBuilder toHexString(final StringBuilder hex, final byte[] buf, final int off, final int len) {
-    if (len == 0) return hex;
-
-    for (int i = 0; i < len; ++i) {
-      addHexString(hex, buf[off + i]);
-    }
+    Base16.base16().encode(hex, buf, off, len);
     return hex;
-  }
-
-  public static StringBuilder addHexString(final StringBuilder builder, final int value) {
-    final int val = value & 0xff;
-    builder.append(StringUtil.HEX_DIGITS[(val >> 4) & 0xf]);
-    builder.append(StringUtil.HEX_DIGITS[val & 0xf]);
-    return builder;
-  }
-
-  public static StringBuilder addHexString(final StringBuilder builder, final long value) {
-    return addHexString(builder, (int)(value & 0xff));
   }
 
   // ================================================================================

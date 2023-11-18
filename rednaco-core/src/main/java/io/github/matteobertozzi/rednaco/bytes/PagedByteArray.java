@@ -22,7 +22,7 @@ import java.util.Arrays;
 import io.github.matteobertozzi.rednaco.bytes.BytesUtil.ByteArrayConsumer;
 import io.github.matteobertozzi.rednaco.util.BitUtil;
 
-public class PagedByteArray {
+public class PagedByteArray implements ByteArrayAppender {
   private static final int DEFAULT_PAGES_GROWTH = 16;
   private static final int DEFAULT_PAGE_SIZE = 4096;
 
@@ -103,15 +103,18 @@ public class PagedByteArray {
   // ================================================================================
   //  PUBLIC write related methods
   // ================================================================================
+  @Override
   public void add(final int value) {
     if (pageItems == pageSize) rollPage();
     lastPage[pageItems++] = (byte) (value & 0xff);
   }
 
+  @Override
   public void add(final byte[] buf) {
     add(buf, 0, buf.length);
   }
 
+  @Override
   public void add(final byte[] buf, int off, int len) {
     while (len > 0) {
       int avail = lastPage.length - pageItems;

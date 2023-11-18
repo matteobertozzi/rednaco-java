@@ -8,6 +8,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import io.github.matteobertozzi.rednaco.collections.queues.QueueUtil;
+
 public class TestSpinningThread {
   @Test
   @Timeout(value = 5, unit = TimeUnit.SECONDS)
@@ -76,7 +78,7 @@ public class TestSpinningThread {
 
     @Override
     protected void process() {
-      final Item item = ThreadUtil.poll(queue, 1, TimeUnit.SECONDS);
+      final Item item = QueueUtil.pollWithoutInterrupt(queue, 1, TimeUnit.SECONDS);
       if (item == null) return;
 
       item.markProcessed();

@@ -19,8 +19,10 @@ package io.github.matteobertozzi.rednaco.collections.sets;
 
 import io.github.matteobertozzi.rednaco.util.BitUtil;
 
+import java.util.Arrays;
+
 public class EnumBitSet<T extends Enum<T>> {
-    private long[] words;
+    private final long[] words;
 
     public EnumBitSet(final Class<T> elementType) {
       this(elementType.getEnumConstants());
@@ -69,9 +71,7 @@ public class EnumBitSet<T extends Enum<T>> {
     }
 
     public void clear() {
-      for (int i = 0; i < words.length; ++i) {
-        words[i] = 0;
-      }
+      Arrays.fill(words, 0);
     }
 
     public boolean get(final T key) {

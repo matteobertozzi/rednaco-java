@@ -25,8 +25,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
+import io.github.matteobertozzi.rednaco.time.TimeUtil.CachedSystemClock;
 import io.github.matteobertozzi.rednaco.time.TimeUtil.ClockProvider;
 import io.github.matteobertozzi.rednaco.time.TimeUtil.ManualClockProvider;
+import io.github.matteobertozzi.rednaco.time.TimeUtil.SystemClock;
 
 @Execution(ExecutionMode.SAME_THREAD)
 public class TestTimeUtil {
@@ -82,6 +84,25 @@ public class TestTimeUtil {
       Assertions.assertEquals(0L, manualClock.epochNanos());
     } finally {
       TimeUtil.setClockProvider(clockProvider);
+    }
+  }
+
+  @Test
+  public void testCachedClock() {
+    final CachedSystemClock cachedClock = new CachedSystemClock();
+    final SystemClock sysClock = SystemClock.INSTANCE;
+
+    final long startTime = System.nanoTime();
+    while ((System.nanoTime() - startTime) < TimeUnit.SECONDS.toNanos(1)) {
+      final long cachedEpochNanos = cachedClock.epochNanos();
+      final long sysEpochNanos = sysClock.epochNanos();
+      final long deltaNanos = Math.abs(cachedEpochNanos - sysEpochNanos);
+      Assertions.assertTrue(deltaNanos < 5_000_000L, "deltaNanos: " + deltaNanos);
+
+      final long cachedEpochMillis = cachedClock.epochMillis();
+      final long sysEpochMillis = sysClock.epochMillis();
+      final long deltaMillis = Math.abs(cachedEpochMillis - sysEpochMillis);
+      Assertions.assertTrue(deltaMillis < 5, "deltaMillis: " + deltaMillis);
     }
   }
 }

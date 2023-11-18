@@ -88,6 +88,7 @@ RELEASE_TYPES = {
   'EA': 1000,
   'M': 2000,
   'ALPHA': 3000,
+  'PREVIEW': 3000,
   'BETA': 4000,
   'RC': 5000,
   'CR': 5000,
