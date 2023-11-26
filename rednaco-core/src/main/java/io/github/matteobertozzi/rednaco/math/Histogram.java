@@ -66,6 +66,10 @@ public class Histogram {
     return Statistics.sum(events, 0, events.length);
   }
 
+  public long sum() {
+    return sum;
+  }
+
   public long minValue() {
     return minValue;
   }

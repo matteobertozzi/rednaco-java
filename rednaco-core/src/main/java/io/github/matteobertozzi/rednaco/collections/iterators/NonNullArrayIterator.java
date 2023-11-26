@@ -21,21 +21,22 @@ import java.util.NoSuchElementException;
 
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
 
-public class ArrayIterator<T> implements PeekIterator<T> {
+public class NonNullArrayIterator<T> implements PeekIterator<T> {
   private final T[] array;
   private final int offset;
   private final int length;
   private int nextIndex;
 
-  public ArrayIterator(final T[] array) {
+  public NonNullArrayIterator(final T[] array) {
     this(array, 0, ArrayUtil.length(array));
   }
 
-  public ArrayIterator(final T[] array, final int offset, final int length) {
+  public NonNullArrayIterator(final T[] array, final int offset, final int length) {
     this.array = array;
     this.offset = offset;
     this.length = length;
     this.nextIndex = 0;
+    skipNulls();
   }
 
   @Override
@@ -48,7 +49,9 @@ public class ArrayIterator<T> implements PeekIterator<T> {
     if (nextIndex >= length) {
       throw new NoSuchElementException();
     }
-    return array[offset + nextIndex++];
+    final T value = array[offset + nextIndex++];
+    skipNulls();
+    return value;
   }
 
   @Override
@@ -57,5 +60,11 @@ public class ArrayIterator<T> implements PeekIterator<T> {
       return array[offset + nextIndex];
     }
     return null;
+  }
+
+  private void skipNulls() {
+    while (nextIndex < length && array[offset + nextIndex] == null) {
+      nextIndex++;
+    }
   }
 }

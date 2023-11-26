@@ -20,15 +20,16 @@ package io.github.matteobertozzi.rednaco.iterators;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import io.github.matteobertozzi.rednaco.collections.iterators.ArrayIterator;
+import io.github.matteobertozzi.rednaco.collections.iterators.NonNullArrayIterator;
 import io.github.matteobertozzi.rednaco.collections.iterators.PeekIterator;
 
-public class TestArrayIterator {
+public class TestNonNullArrayIterator {
   @Test
   public void testArrayIterator() {
-    final String[] items = new String[] { "ddd", "aaa", "ccc", "bbb" };
-    final PeekIterator<String> it = new ArrayIterator<>(items);
+    final String[] items = new String[] { null, "ddd", null, null, "aaa", "ccc", null, "bbb", null, null };
+    final PeekIterator<String> it = new NonNullArrayIterator<>(items);
     for (final String item : items) {
+      if (item == null) continue;
       Assertions.assertTrue(it.hasNext());
       Assertions.assertEquals(item, it.peek());
       Assertions.assertEquals(item, it.next());
@@ -39,11 +40,12 @@ public class TestArrayIterator {
 
   @Test
   public void testArrayIteratorWithOffset() {
-    final String[] items = new String[] { "ddd", "aaa", "ccc", "bbb" };
+    final String[] items = new String[] { null, "ddd", null, null, "aaa", "ccc", null, "bbb", null, null };
     for (int off = 0; off < items.length; ++off) {
       for (int len = 0; len < (items.length - off); ++len) {
-        final PeekIterator<String> it = new ArrayIterator<>(items, off, len);
+        final PeekIterator<String> it = new NonNullArrayIterator<>(items, off, len);
         for (int i = 0; i < len; ++i) {
+          if (items[off + i] == null) continue;
           Assertions.assertTrue(it.hasNext());
           Assertions.assertEquals(items[off + i], it.peek());
           Assertions.assertEquals(items[off + i], it.next());

@@ -20,9 +20,10 @@ package io.github.matteobertozzi.rednaco.collections.sets;
 import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Objects;
 
+import io.github.matteobertozzi.rednaco.collections.Hashing;
 import io.github.matteobertozzi.rednaco.collections.iterators.ArrayIterator;
-import io.github.matteobertozzi.rednaco.util.BitUtil;
 
 public class HashIndexedArray<K> extends AbstractSet<K> {
   private final int[] buckets;
@@ -32,13 +33,13 @@ public class HashIndexedArray<K> extends AbstractSet<K> {
   public HashIndexedArray(final K[] keys) {
     this.keys = keys;
 
-    this.buckets = new int[tableSizeFor(keys.length + 7)];
+    this.buckets = new int[Hashing.tableSizeFor(keys.length + 7)];
     Arrays.fill(this.buckets, -1);
 
     this.table = new int[keys.length << 1];
     final int mask = buckets.length - 1;
     for (int i = 0, n = keys.length; i < n; ++i) {
-      final int hashCode = hash(keys[i]);
+      final int hashCode = Hashing.hash32(keys[i]);
       final int targetBucket = hashCode & mask;
       final int tableIndex = (i << 1);
       this.table[tableIndex] = hashCode;
@@ -71,29 +72,16 @@ public class HashIndexedArray<K> extends AbstractSet<K> {
   }
 
   public int getIndex(final Object key) {
-    final int hashCode = hash(key);
+    final int hashCode = Hashing.hash32(key);
     int index = buckets[hashCode & (buckets.length - 1)];
     while (index >= 0) {
       final int tableIndex = (index << 1);
-      if (hashCode == table[tableIndex] && keys[index].equals(key)) {
+      if (hashCode == table[tableIndex] && Objects.equals(key, keys[index])) {
         return index;
       }
       index = table[tableIndex + 1];
     }
     return -1;
-  }
-
-  private static int hash(final Object key) {
-    int h = key.hashCode() & 0x7fffffff;
-    h = ((h >>> 16) ^ h) * 0x45d9f3b;
-    h = ((h >>> 16) ^ h) * 0x45d9f3b;
-    h = (h >>> 16) ^ h;
-    return h & 0x7fffffff;
-  }
-
-  private static int tableSizeFor(final int capacity) {
-    final int n = BitUtil.nextPow2(capacity);
-    return (n < 0) ? 1 : Math.min(n, 1 << 30);
   }
 
   @Override

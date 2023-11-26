@@ -19,6 +19,11 @@ package io.github.matteobertozzi.rednaco.threading;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.github.matteobertozzi.easerinsights.logging.Logger;
+import io.github.matteobertozzi.easerinsights.tracing.Span;
+import io.github.matteobertozzi.easerinsights.tracing.Tracer;
+import io.github.matteobertozzi.rednaco.strings.HumansUtil;
+
 public final class ShutdownUtil {
   private static final NamedThreadFactory threadFactory = new NamedThreadFactory("ShutdownHook");
 
@@ -44,11 +49,19 @@ public final class ShutdownUtil {
 
   public static void addShutdownHook(final String name, final Thread mainThread, final AtomicBoolean running, final StopSignal... services) {
     Runtime.getRuntime().addShutdownHook(threadFactory.newThread(() -> {
-      for (int i = 0; i < services.length; ++i) {
-        services[i].sendStopSignal();
+      try (Span span = Tracer.newRootSpan()) {
+        span.setName("Shutdown Hook");
+
+        final long startTime = System.nanoTime();
+        Logger.info("{} shutdown hook!", name);
+        for (int i = 0; i < services.length; ++i) {
+          services[i].sendStopSignal();
+        }
+        running.set(false);
+        Logger.debug("waiting for {} to finish", mainThread);
+        ThreadUtil.shutdown(mainThread);
+        Logger.info("shutdown took: {}", HumansUtil.humanTimeSince(startTime));
       }
-      running.set(false);
-      ThreadUtil.shutdown(mainThread);
     }));
   }
 }

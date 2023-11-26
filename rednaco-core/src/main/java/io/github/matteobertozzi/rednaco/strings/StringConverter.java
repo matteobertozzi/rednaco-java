@@ -21,6 +21,8 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
+import io.github.matteobertozzi.easerinsights.logging.Logger;
+
 public final class StringConverter {
   private static final String DEFAULT_KEY = "value";
 
@@ -89,7 +91,7 @@ public final class StringConverter {
       try {
         return Integer.parseInt(value);
       } catch (final Exception e) {
-        System.err.println("unable to parse " + key + ": " + value);
+        Logger.warn("unable to parse {}: {}", key, value);
       }
     }
     return defaultValue;
@@ -118,7 +120,7 @@ public final class StringConverter {
       try {
         return Long.parseLong(value);
       } catch (final Exception e) {
-        System.err.println("unable to parse " + key + ": " + value);
+        Logger.warn("unable to parse {}: {}", key, value);
       }
     }
     return defaultValue;
@@ -147,7 +149,7 @@ public final class StringConverter {
       try {
         return Short.parseShort(value);
       } catch (final Exception e) {
-        System.err.println("unable to parse " + key + ": " + value);
+        Logger.warn("unable to parse {}: {}", key, value);
       }
     }
     return defaultValue;
@@ -179,7 +181,7 @@ public final class StringConverter {
         try {
           return Float.parseFloat(value.replace(',', '.'));
         } catch (final Exception e2) {
-          System.err.println("unable to parse " + key + ": " + value);
+          Logger.warn("unable to parse {}: {}", key, value);
         }
       }
     }
@@ -216,7 +218,7 @@ public final class StringConverter {
         try {
           return Double.parseDouble(value.replace(',', '.'));
         } catch (final Exception e2) {
-          System.err.println("unable to parse " + key + ": " + value);
+          Logger.warn("unable to parse {}: {}", key, value);
         }
       }
     }
@@ -253,7 +255,7 @@ public final class StringConverter {
         try {
           return new BigDecimal(value.replace(',', '.'));
         } catch (final Exception e2) {
-          System.err.println("unable to parse " + key + ": " + value);
+          Logger.warn("unable to parse {}: {}", key, value);
         }
       }
     }
@@ -294,7 +296,7 @@ public final class StringConverter {
         case "0":
           return false;
         default:
-          System.err.println("unable to parse " + key + ": " + value);
+          Logger.warn("unable to parse {}: {}", key, value);
       }
     }
     return defaultValue;
@@ -332,7 +334,7 @@ public final class StringConverter {
       try {
         return Enum.valueOf(enumType, value);
       } catch (final Exception e) {
-        System.err.println("unable to parse " + key + ": " + value);
+        Logger.warn("unable to parse {}: {}", key, value);
       }
     }
     return defaultValue;

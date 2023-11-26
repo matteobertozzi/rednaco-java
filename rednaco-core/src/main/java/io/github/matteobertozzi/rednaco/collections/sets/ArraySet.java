@@ -15,47 +15,40 @@
  * limitations under the License.
  */
 
-package io.github.matteobertozzi.rednaco.collections.iterators;
+package io.github.matteobertozzi.rednaco.collections.sets;
 
-import java.util.NoSuchElementException;
+import java.util.AbstractSet;
+import java.util.Iterator;
 
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
+import io.github.matteobertozzi.rednaco.collections.iterators.ArrayIterator;
 
-public class ArrayIterator<T> implements PeekIterator<T> {
+public class ArraySet<T> extends AbstractSet<T> {
   private final T[] array;
   private final int offset;
   private final int length;
-  private int nextIndex;
 
-  public ArrayIterator(final T[] array) {
+  public ArraySet(final T[] array) {
     this(array, 0, ArrayUtil.length(array));
   }
 
-  public ArrayIterator(final T[] array, final int offset, final int length) {
+  public ArraySet(final T[] array, final int offset, final int length) {
     this.array = array;
     this.offset = offset;
     this.length = length;
-    this.nextIndex = 0;
   }
 
   @Override
-  public boolean hasNext() {
-    return nextIndex < length;
+  public int size() {
+    return length;
+  }
+
+  public boolean isNotEmpty() {
+    return length != 0;
   }
 
   @Override
-  public T next() {
-    if (nextIndex >= length) {
-      throw new NoSuchElementException();
-    }
-    return array[offset + nextIndex++];
-  }
-
-  @Override
-  public T peek() {
-    if (nextIndex < length) {
-      return array[offset + nextIndex];
-    }
-    return null;
+  public Iterator<T> iterator() {
+    return new ArrayIterator<>(array, offset, length);
   }
 }

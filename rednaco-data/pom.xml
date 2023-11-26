@@ -5,11 +5,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.github.matteobertozzi</groupId>
-  <artifactId>rednaco-core</artifactId>
+  <artifactId>rednaco-data</artifactId>
   <version>3.0.0-SNAPSHOT</version>
 
-  <name>rednaco-core</name>
-  <description>REDNACO Commons and Utils for Java.</description>
+  <name>rednaco-data</name>
+  <description>REDNACO Data Format Utils for Java.</description>
   <url>https://github.com/matteobertozzi/rednaco</url>
   <licenses>
     <license>
@@ -32,7 +32,8 @@
   </developers>
 
   <properties>
-    <easer.insights.version>0.1.5-SNAPSHOT</easer.insights.version>
+    <jackson.version>2.16.0</jackson.version>
+    <jackson.databind.version>2.16.0</jackson.databind.version>
 
     <junit.version>5.10.1</junit.version>
 
@@ -52,8 +53,40 @@
   <dependencies>
     <dependency>
       <groupId>io.github.matteobertozzi</groupId>
-      <artifactId>easer-insights-logger</artifactId>
-      <version>${easer.insights.version}</version>
+      <artifactId>rednaco-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- Encoding -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-parameter-names</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-cbor</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-xml</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.matteobertozzi</groupId>
+      <artifactId>jackson-dataformat-yajbe</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
 
     <!-- Unit Tests Related -->

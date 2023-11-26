@@ -22,6 +22,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 import io.github.matteobertozzi.rednaco.strings.StringBuilderUtil;
 
@@ -167,7 +170,7 @@ public final class ArrayUtil {
   }
 
   // ================================================================================
-  //  New Array related
+  //  New Array from array related - map()
   // ================================================================================
   public static <T> T[] newArrayFrom(final Supplier<T>[] suppliers) {
     final T[] newData = newArray(suppliers.length);
@@ -177,10 +180,64 @@ public final class ArrayUtil {
     return newData;
   }
 
+  public static <T> int[] newIntArrayFrom(final T[] values, final ToIntFunction<T> mapper) {
+    final int[] newData = new int[values.length];
+    for (int i = 0; i < values.length; ++i) {
+      newData[i] = mapper.applyAsInt(values[i]);
+    }
+    return newData;
+  }
+
+  public static <T> long[] newLongArrayFrom(final T[] values, final ToLongFunction<T> mapper) {
+    final long[] newData = new long[values.length];
+    for (int i = 0; i < values.length; ++i) {
+      newData[i] = mapper.applyAsLong(values[i]);
+    }
+    return newData;
+  }
+
+  public static <T> double[] newDoubleArrayFrom(final T[] values, final ToDoubleFunction<T> mapper) {
+    final double[] newData = new double[values.length];
+    for (int i = 0; i < values.length; ++i) {
+      newData[i] = mapper.applyAsDouble(values[i]);
+    }
+    return newData;
+  }
+
   public static <TIn, TOut> TOut[] newArrayFrom(final TIn[] values, final Function<TIn, TOut> mapper) {
     final TOut[] newData = newArray(values.length);
     for (int i = 0; i < values.length; ++i) {
       newData[i] = mapper.apply(values[i]);
+    }
+    return newData;
+  }
+
+  // ================================================================================
+  //  New Array from list related - map()
+  // ================================================================================
+  public static <T> int[] newIntArrayFrom(final Collection<T> values, final ToIntFunction<T> mapper) {
+    int index = 0;
+    final int[] newData = new int[values.size()];
+    for (final T value: values) {
+      newData[index++] = mapper.applyAsInt(value);
+    }
+    return newData;
+  }
+
+  public static <T> long[] newLongArrayFrom(final Collection<T> values, final ToLongFunction<T> mapper) {
+    int index = 0;
+    final long[] newData = new long[values.size()];
+    for (final T value: values) {
+      newData[index++] = mapper.applyAsLong(value);
+    }
+    return newData;
+  }
+
+  public static <T> double[] newDoubleArrayFrom(final Collection<T> values, final ToDoubleFunction<T> mapper) {
+    int index = 0;
+    final double[] newData = new double[values.size()];
+    for (final T value: values) {
+      newData[index++] = mapper.applyAsDouble(value);
     }
     return newData;
   }
