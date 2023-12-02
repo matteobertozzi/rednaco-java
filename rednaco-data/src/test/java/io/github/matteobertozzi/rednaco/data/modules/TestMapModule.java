@@ -38,7 +38,7 @@ public class TestMapModule {
   public void testRecord() {
     final TestEntity[] entries = new TestEntity[] { new TestEntity("k1", 10), new TestEntity("k2", 20), new TestEntity("k3", 30) };
     final HashIndexedArray<String> index = new HashIndexedArray<>(new String[] { "a", "b", "c" });
-    final HashIndexedArrayMap<String, TestEntity> map = HashIndexedArrayMap.fromEntry(entries, TestEntity::a);
+    final HashIndexedArrayMap<String, TestEntity> map = HashIndexedArrayMap.fromEntity(entries, TestEntity::a);
 
     final TestRec rec = new TestRec(index, map);
     final String json = JsonFormat.INSTANCE.asString(rec);
