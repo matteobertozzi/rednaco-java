@@ -25,13 +25,11 @@ import java.util.Arrays;
 import io.github.matteobertozzi.rednaco.bytes.BytesUtil.ByteArrayConsumer;
 
 public class ByteArraySlice implements BytesSlice {
+  public static final ByteArraySlice EMPTY_SLICE = new ByteArraySlice(BytesUtil.EMPTY_BYTES);
+
   private byte[] buf;
   private int off;
   private int len;
-
-  public ByteArraySlice() {
-    this(BytesUtil.EMPTY_BYTES);
-  }
 
   public ByteArraySlice(final byte[] buf) {
     this(buf, 0, buf.length);

@@ -83,7 +83,7 @@ public class ByteArrayReader extends BytesInputStream {
 
   @Override
   public long skip(final long n) {
-    this.rpos += n;
+    this.rpos = Math.toIntExact(rpos + n);
     return n;
   }
 

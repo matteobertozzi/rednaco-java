@@ -55,6 +55,10 @@ public class ByteArray implements ByteArrayAppender {
     return Arrays.copyOf(buffer, length);
   }
 
+  public ByteArraySlice slice() {
+    return isEmpty() ? ByteArraySlice.EMPTY_SLICE : new ByteArraySlice(buffer, 0, length);
+  }
+
   public byte[] drain() {
     final byte[] result;
     if (buffer.length == length) {

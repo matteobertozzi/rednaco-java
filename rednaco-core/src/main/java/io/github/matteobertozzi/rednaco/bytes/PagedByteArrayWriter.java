@@ -74,7 +74,11 @@ public class PagedByteArrayWriter extends BytesOutputStream {
 
   @Override
   public int writeTo(final OutputStream stream) throws IOException {
-    return this.buf.forEach((xbuf, xoff, xlen) -> writeToStream(stream, xbuf, xoff, xlen));
+    try {
+      return this.buf.forEach((xbuf, xoff, xlen) -> writeToStream(stream, xbuf, xoff, xlen));
+    } catch (final RuntimeIOException e) {
+      throw e.ioCause();
+    }
   }
 
   @Override

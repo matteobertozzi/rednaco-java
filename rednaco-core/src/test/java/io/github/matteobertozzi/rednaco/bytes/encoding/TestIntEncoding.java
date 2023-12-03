@@ -53,10 +53,10 @@ public class TestIntEncoding {
     IntEncoder.BIG_ENDIAN.writeFixed32(buf, 3, 0x0B0D0E05);
     Assertions.assertArrayEquals(new byte[] { 0, 0, 0, 0x0B, 0x0D, 0x0E, 0x05, 0 }, buf);
 
-    IntEncoder.BIG_ENDIAN.writeFixed32(buf, 3, 0xABCDEF97);
+    IntEncoder.BIG_ENDIAN.writeFixed32(buf, 3, 0xABCDEF97L);
     Assertions.assertArrayEquals(new byte[] { 0, 0, 0, (byte)0xAB, (byte)0xCD, (byte)0xEF, (byte)0x97, 0 }, buf);
 
-    IntEncoder.BIG_ENDIAN.writeFixed32(buf, 3, 0xffffffff);
+    IntEncoder.BIG_ENDIAN.writeFixed32(buf, 3, 0xffffffffL);
     Assertions.assertArrayEquals(new byte[] { 0, 0, 0, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, 0 }, buf);
 
     IntEncoder.BIG_ENDIAN.writeFixed40(buf, 2, 0xABCDEF971BL);
@@ -103,10 +103,10 @@ public class TestIntEncoding {
     IntEncoder.LITTLE_ENDIAN.writeFixed32(buf, 3, 0x0B0D0E05);
     Assertions.assertArrayEquals(new byte[] { 0, 0, 0, 0x05, 0x0E, 0x0D, 0x0B, 0 }, buf);
 
-    IntEncoder.LITTLE_ENDIAN.writeFixed32(buf, 3, 0xABCDEF97);
+    IntEncoder.LITTLE_ENDIAN.writeFixed32(buf, 3, 0xABCDEF97L);
     Assertions.assertArrayEquals(new byte[] { 0, 0, 0, (byte)0x97, (byte)0xEF, (byte)0xCD, (byte)0xAB, 0 }, buf);
 
-    IntEncoder.LITTLE_ENDIAN.writeFixed32(buf, 3, 0xffffffff);
+    IntEncoder.LITTLE_ENDIAN.writeFixed32(buf, 3, 0xffffffffL);
     Assertions.assertArrayEquals(new byte[] { 0, 0, 0, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, 0 }, buf);
 
     IntEncoder.LITTLE_ENDIAN.writeFixed40(buf, 2, 0xABCDEF971BL);
