@@ -17,40 +17,36 @@
 
 package io.github.matteobertozzi.rednaco.collections;
 
-public class LongValue {
-  private long value;
+public class IntegerValue {
+  private int value;
 
-  public LongValue() {
+  public IntegerValue() {
     this(0);
   }
 
-  public LongValue(final int initValue) {
+  public IntegerValue(final int initValue) {
     this.value = initValue;
   }
 
-  public long set(final long newValue) {
-    final long oldValue = this.value;
+  public int set(final int newValue) {
+    final int oldValue = this.value;
     this.value = newValue;
     return oldValue;
   }
 
-  public long get() {
+  public int get() {
     return value;
   }
 
-  public int intValue() {
-    return Math.toIntExact(value);
-  }
-
-  public long incrementAndGet() {
+  public int incrementAndGet() {
     return ++value;
   }
 
-  public long getAndIncrement() {
+  public int getAndIncrement() {
     return value++;
   }
 
-  public long add(final long amount) {
+  public int add(final int amount) {
     value += amount;
     return value;
   }

@@ -19,6 +19,8 @@ package io.github.matteobertozzi.rednaco.data;
 
 import java.io.Serial;
 import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.util.TimeZone;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -36,11 +38,12 @@ import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 
 import io.github.matteobertozzi.rednaco.data.json.JsonElementModule;
 import io.github.matteobertozzi.rednaco.data.modules.DataMapperModules;
+import io.github.matteobertozzi.rednaco.data.modules.TraceIdsModule;
 import io.github.matteobertozzi.rednaco.util.Serialization.SerializationName;
 import io.github.matteobertozzi.rednaco.util.Serialization.SerializeWithSnakeCase;
 
 public class DataFormatMapper {
-  public static final String JSON_DATE_FORMAT_PATTERN = "YYYYMMddHHmmss";
+  private static final String JSON_DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
 
   private final ObjectMapper mapper;
 
@@ -63,12 +66,16 @@ public class DataFormatMapper {
     this.mapper.configure(SerializationFeature.INDENT_OUTPUT, false);
     this.mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 
-    this.mapper.setDateFormat(new SimpleDateFormat(JSON_DATE_FORMAT_PATTERN));
+    // Javascript JSON.stringify(new Date()) -> "2023-12-10T10:25:57.132Z"
+    final SimpleDateFormat sdf = new SimpleDateFormat(JSON_DATE_FORMAT_PATTERN);
+    sdf.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
+    this.mapper.setDateFormat(sdf);
 
     this.mapper.setAnnotationIntrospector(new ExtentedAnnotationIntrospector());
 
     // Default Modules
     registerModule(JsonElementModule.INSTANCE);
+    registerModule(TraceIdsModule.INSTANCE);
     //registerModule(MapModule.INSTANCE);
     for (final Module module: DataMapperModules.INSTANCE.getModules()) {
       registerModule(module);

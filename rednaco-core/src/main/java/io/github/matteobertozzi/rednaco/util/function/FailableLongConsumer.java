@@ -15,48 +15,9 @@
  * limitations under the License.
  */
 
-package io.github.matteobertozzi.rednaco.collections;
+package io.github.matteobertozzi.rednaco.util.function;
 
-public class LongValue {
-  private long value;
-
-  public LongValue() {
-    this(0);
-  }
-
-  public LongValue(final int initValue) {
-    this.value = initValue;
-  }
-
-  public long set(final long newValue) {
-    final long oldValue = this.value;
-    this.value = newValue;
-    return oldValue;
-  }
-
-  public long get() {
-    return value;
-  }
-
-  public int intValue() {
-    return Math.toIntExact(value);
-  }
-
-  public long incrementAndGet() {
-    return ++value;
-  }
-
-  public long getAndIncrement() {
-    return value++;
-  }
-
-  public long add(final long amount) {
-    value += amount;
-    return value;
-  }
-
-  @Override
-  public String toString() {
-    return String.valueOf(value);
-  }
+@FunctionalInterface
+public interface FailableLongConsumer {
+  void accept(long value) throws Exception;
 }

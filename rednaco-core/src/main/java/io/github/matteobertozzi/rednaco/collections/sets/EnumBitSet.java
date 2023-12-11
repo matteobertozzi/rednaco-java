@@ -17,67 +17,67 @@
 
 package io.github.matteobertozzi.rednaco.collections.sets;
 
-import io.github.matteobertozzi.rednaco.util.BitUtil;
-
 import java.util.Arrays;
 
+import io.github.matteobertozzi.rednaco.util.BitUtil;
+
 public class EnumBitSet<T extends Enum<T>> {
-    private final long[] words;
+  private final long[] words;
 
-    public EnumBitSet(final Class<T> elementType) {
-      this(elementType.getEnumConstants());
-    }
+  public EnumBitSet(final Class<T> elementType) {
+    this(elementType.getEnumConstants());
+  }
 
-    public EnumBitSet(final T[] universe) {
-      int maxOrdinal = 0;
-      for (int i = 0; i < universe.length; ++i) {
-        final int ordinal = universe[i].ordinal();
-        if (ordinal < 0) {
-          throw new IllegalArgumentException("expected ordinals from 0-N: " + universe[i]);
-        }
-        maxOrdinal = Math.max(maxOrdinal, ordinal);
+  public EnumBitSet(final T[] universe) {
+    int maxOrdinal = 0;
+    for (int i = 0; i < universe.length; ++i) {
+      final int ordinal = universe[i].ordinal();
+      if (ordinal < 0) {
+        throw new IllegalArgumentException("expected ordinals from 0-N: " + universe[i]);
       }
-
-      final int length = BitUtil.align(maxOrdinal + 1, 64) >>> 6;
-      this.words = new long[length];
+      maxOrdinal = Math.max(maxOrdinal, ordinal);
     }
 
-    public boolean isEmpty() {
-      for (int i = 0; i < words.length; ++i) {
-        if (words[i] != 0) {
-          return false;
-        }
-      }
-      return true;
-    }
+    final int length = BitUtil.align(maxOrdinal + 1, 64) >>> 6;
+    this.words = new long[length];
+  }
 
-    public void set(final T key, final boolean value) {
-      final int ordinal = key.ordinal();
-      final int index =  ordinal >>> 6;
-      final int offset = ordinal & 63;
-      if (value) {
-        words[index] |= (1L << offset);
-      } else {
-        words[index] &= ~(1L << offset);
+  public boolean isEmpty() {
+    for (int i = 0; i < words.length; ++i) {
+      if (words[i] != 0) {
+        return false;
       }
     }
+    return true;
+  }
 
-    public void set(final T key) {
-      set(key, true);
-    }
-
-    public void clear(final T key) {
-      set(key, false);
-    }
-
-    public void clear() {
-      Arrays.fill(words, 0);
-    }
-
-    public boolean get(final T key) {
-      final int ordinal = key.ordinal();
-      final int index =  ordinal >>> 6;
-      final int offset = ordinal & 63;
-      return (words[index] & (1L << offset)) != 0;
+  public void set(final T key, final boolean value) {
+    final int ordinal = key.ordinal();
+    final int index =  ordinal >>> 6;
+    final int offset = ordinal & 63;
+    if (value) {
+      words[index] |= (1L << offset);
+    } else {
+      words[index] &= ~(1L << offset);
     }
   }
+
+  public void set(final T key) {
+    set(key, true);
+  }
+
+  public void clear(final T key) {
+    set(key, false);
+  }
+
+  public void clear() {
+    Arrays.fill(words, 0);
+  }
+
+  public boolean get(final T key) {
+    final int ordinal = key.ordinal();
+    final int index =  ordinal >>> 6;
+    final int offset = ordinal & 63;
+    return (words[index] & (1L << offset)) != 0;
+  }
+}

@@ -117,6 +117,8 @@
               <mode>development</mode>
               <builtBy>${user.name}</builtBy>
               <buildTimestamp>${maven.build.timestamp}</buildTimestamp>
+              <gitBranch>${git.branch}</gitBranch>
+              <gitHash>${git.hash}</gitHash>
             </manifestEntries>
           </archive>
         </configuration>

@@ -79,13 +79,12 @@ public class BitEncoder {
 
     // write the first part and flush
     final int shift = bits - vBitsAvail;
-    final int remainingBits = shift;
     vBuffer |= (value >> shift) & BitUtil.mask(vBitsAvail);
     flush(Long.SIZE);
 
     // write the second part
-    vBitsAvail -= remainingBits;
-    vBuffer |= (value & BitUtil.mask(remainingBits)) << vBitsAvail;
+    vBitsAvail -= shift;
+    vBuffer |= (value & BitUtil.mask(shift)) << vBitsAvail;
   }
 
   public void flush() {
