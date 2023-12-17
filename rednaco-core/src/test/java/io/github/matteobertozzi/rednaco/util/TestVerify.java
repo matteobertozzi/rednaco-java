@@ -31,7 +31,8 @@ import org.junit.jupiter.api.function.Executable;
 import io.github.matteobertozzi.rednaco.util.Verify.VerifyArgInvalidArgumentException;
 
 public class TestVerify {
-  enum TestEnum { AAA, BBB, CCC };
+  enum TestEnum { AAA, BBB, CCC }
+
   record Foo(int a, int b) {}
 
   @Test
@@ -168,6 +169,7 @@ public class TestVerify {
     assertInvalidArgument(() -> Verify.expectEquals("test", 0.0, 5.5, 0.0001));
   }
 
+  @Test
   public void testExpectEqualsObject() {
     final Foo value = new Foo(10, 20);
     assertEquals(value, Verify.expectEquals("test", value, new Foo(10, 20)));

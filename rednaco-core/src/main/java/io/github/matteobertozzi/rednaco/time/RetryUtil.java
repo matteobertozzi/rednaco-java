@@ -101,7 +101,7 @@ public final class RetryUtil {
     @Override
     public int nextWaitIntervalMillis() {
       final ThreadLocalRandom rand = ThreadLocalRandom.current();
-      final int jitter = (int) Math.round(jitterMillis * rand.nextFloat());
+      final int jitter = Math.round(jitterMillis * rand.nextFloat());
       return (rand.nextFloat() > 0.5) ? intervalMillis - jitter : intervalMillis + jitter;
     }
   }

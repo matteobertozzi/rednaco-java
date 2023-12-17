@@ -147,6 +147,20 @@ public class Base16 {
     return i32;
   }
 
+  public int decodeInt32(final byte[] encoded) {
+    return decodeInt32(encoded, 0, BytesUtil.length(encoded));
+  }
+
+  public int decodeInt32(final byte[] encoded, final int offset, final int length) {
+    int i32 = 0;
+    int shift = (length - 1) << 2;
+    for (int i = 0; i < length; ++i) {
+      i32 |= decodeTable[encoded[offset + i]] << shift;
+      shift -= 4;
+    }
+    return i32;
+  }
+
   public long decodeInt64(final String encoded) {
     return decodeInt64(encoded, 0, StringUtil.length(encoded));
   }
@@ -156,6 +170,20 @@ public class Base16 {
     int shift = (length - 1) << 2;
     for (int i = 0; i < length; ++i) {
       i64 |= ((long)decodeTable[encoded.charAt(offset + i)]) << shift;
+      shift -= 4;
+    }
+    return i64;
+  }
+
+  public long decodeInt64(final byte[] encoded) {
+    return decodeInt64(encoded, 0, BytesUtil.length(encoded));
+  }
+
+  public long decodeInt64(final byte[] encoded, final int offset, final int length) {
+    long i64 = 0;
+    int shift = (length - 1) << 2;
+    for (int i = 0; i < length; ++i) {
+      i64 |= ((long)decodeTable[encoded[offset + i]]) << shift;
       shift -= 4;
     }
     return i64;

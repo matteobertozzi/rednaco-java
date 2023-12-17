@@ -42,16 +42,16 @@ public class TimeRange {
     return (int) Math.min(next + 1, slotsCount);
   }
 
-  public void copy(final int slotsCount, final int length, final CopySlots copyFunc) {
+  public void copy(final int slotsCount, final int length, final CopyTimeRangeSlots copyFunc) {
     final int eofIndex = 1 + (int) (next % slotsCount);
     //System.out.println(" ---> COPY - next:" + next + " length:" + length + " eofIndex:" + eofIndex);
     if (next >= length) {
       // 5, 6, 7, 8, 1, 2, 3, 4
-      copyFunc.copy(0, eofIndex, slotsCount);
-      copyFunc.copy(slotsCount - eofIndex, 0, eofIndex);
+      copyFunc.copyTimeRangeSlots(0, eofIndex, slotsCount);
+      copyFunc.copyTimeRangeSlots(slotsCount - eofIndex, 0, eofIndex);
     } else {
       //System.out.println("eofIndex: " + eofIndex + " -> next:" + next + "/" + length);
-      copyFunc.copy(0, 0, eofIndex); // 1, 2, 3, 4
+      copyFunc.copyTimeRangeSlots(0, 0, eofIndex); // 1, 2, 3, 4
     }
   }
 
@@ -71,11 +71,11 @@ public class TimeRange {
     }
   }
 
-  public void update(final long timestamp, final int totalSlots, final ResetSlots resetFunc) {
+  public void update(final long timestamp, final int totalSlots, final ResetTimeRangeSlots resetFunc) {
     update(timestamp, totalSlots, resetFunc, TimeRange::noOpUpdate);
   }
 
-  public void update(final long timestamp, final int totalSlots, final ResetSlots resetFunc, final UpdateSlot updateFunc) {
+  public void update(final long timestamp, final int totalSlots, final ResetTimeRangeSlots resetFunc, final UpdateTimeRangeSlot updateFunc) {
     final long alignedTs = TimeUtil.alignToWindow(timestamp, window);
     final long deltaTime = alignedTs - lastInterval;
     //System.out.println(" -> TS DELTA: " + deltaTime + " -> " + lastInterval + "/" + timestamp);
@@ -83,7 +83,7 @@ public class TimeRange {
     // update the current slot
     if (deltaTime == 0) {
       //System.out.println(" ----> update current slots: " + (next % totalSlots));
-      updateFunc.update((int)(next % totalSlots));
+      updateFunc.updateTimeRangeSlot((int)(next % totalSlots));
       return;
     }
 
@@ -91,8 +91,8 @@ public class TimeRange {
       lastInterval = alignedTs;
       final int index = (int)(++next % totalSlots);
       //System.out.println(" ----> update next slots: " + index);
-      resetFunc.reset(index, index + 1);
-      updateFunc.update(index);
+      resetFunc.resetTimeRangeSlots(index, index + 1);
+      updateFunc.updateTimeRangeSlot(index);
       return;
     }
 
@@ -101,7 +101,7 @@ public class TimeRange {
       injectSlots(deltaTime, totalSlots, resetFunc);
       //System.out.println(" ----> inject slots: " + (next % totalSlots));
       lastInterval = alignedTs;
-      updateFunc.update((int)(next % totalSlots));
+      updateFunc.updateTimeRangeSlot((int)(next % totalSlots));
       return;
     }
 
@@ -115,14 +115,14 @@ public class TimeRange {
     }
 
     //System.out.println(" ----> update past slots. " + availSlots + "/" + pastIndex);
-    updateFunc.update((int)((next - pastIndex) % totalSlots));
+    updateFunc.updateTimeRangeSlot((int)((next - pastIndex) % totalSlots));
   }
 
-  private void injectSlots(final long deltaTime, final int totalSlots, final ResetSlots resetFunc) {
+  private void injectSlots(final long deltaTime, final int totalSlots, final ResetTimeRangeSlots resetFunc) {
     final int slots = (int) (deltaTime / window);
     if (slots >= totalSlots) {
       //System.out.println(" ----> clear");
-      resetFunc.reset(0, totalSlots);
+      resetFunc.resetTimeRangeSlots(0, totalSlots);
       next += slots;
       return;
     }
@@ -131,11 +131,11 @@ public class TimeRange {
     final int toIndex = (int) ((next + 1 + slots) % totalSlots);
     if (fromIndex < toIndex) {
       //System.out.println(" ----> inject " + fromIndex + "-" + toIndex);
-      resetFunc.reset(fromIndex, toIndex);
+      resetFunc.resetTimeRangeSlots(fromIndex, toIndex);
     } else {
       //System.out.println(" ----> inject " + fromIndex + "-" + totalSlots + " + 0-" + toIndex);
-      resetFunc.reset(fromIndex, totalSlots);
-      resetFunc.reset(0, toIndex);
+      resetFunc.resetTimeRangeSlots(fromIndex, totalSlots);
+      resetFunc.resetTimeRangeSlots(0, toIndex);
     }
     next += slots;
   }
@@ -145,17 +145,17 @@ public class TimeRange {
   }
 
   @FunctionalInterface
-  public interface UpdateSlot {
-    void update(int slotIndex);
+  public interface UpdateTimeRangeSlot {
+    void updateTimeRangeSlot(int slotIndex);
   }
 
   @FunctionalInterface
-  public interface ResetSlots {
-    void reset(int fromIndex, int toIndex);
+  public interface ResetTimeRangeSlots {
+    void resetTimeRangeSlots(int fromIndex, int toIndex);
   }
 
   @FunctionalInterface
-  public interface CopySlots {
-    void copy(int dstIndex, int srcFromIndex, int srcToIndex);
+  public interface CopyTimeRangeSlots {
+    void copyTimeRangeSlots(int dstIndex, int srcFromIndex, int srcToIndex);
   }
 }

@@ -29,7 +29,7 @@ public class JsonObject extends JsonElement {
   }
 
   public JsonObject(final int length) {
-    this.members = new HashMap<>(length);
+    this.members = HashMap.newHashMap(length);
   }
 
   public JsonObject(final JsonObject other) {
