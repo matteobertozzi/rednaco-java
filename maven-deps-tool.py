@@ -94,34 +94,55 @@ RELEASE_TYPES = {
   'CR': 5000,
 }
 
-#MVN_REPO_URL = 'https://repo.maven.apache.org/maven2/'
-MVN_REPO_URL = 'https://repo1.maven.org/maven2/'
-def fetch_remove_versions(dep: Dependency) -> dict[VersionKey, list[BuildVersion]]:
+def _fetch_from_mvn_repo_dir(dep: Dependency):
   pkg = '%s/%s' % (dep.group_id.replace('.', '/'), dep.artifact_id)
 
+  #MVN_REPO_URL = 'https://repo.maven.apache.org/maven2/'
+  MVN_REPO_URL = 'https://repo1.maven.org/maven2/'
   #print(MVN_REPO_URL + pkg)
   try:
     with request.urlopen(MVN_REPO_URL + pkg) as response:
         html = response.read().decode('utf-8')
+
+    for subUrl in RE_MVN_REPO_URL.findall(html):
+      v = RE_MVN_REPO_VERSION.findall(subUrl)
+      if v:
+        yield v[0]
   except KeyboardInterrupt:
     raise
   except:
-    return {}
+    pass
+
+def _fetch_from_maven_search(dep: Dependency):
+  from urllib.parse import quote
+  import json
+  uri = 'https://search.maven.org/solrsearch/select?rows=20&wt=json&core=gav&q=g:' + quote(dep.group_id) + '+AND+a:' + quote(dep.artifact_id)
+  with request.urlopen(uri) as response:
+      data = json.load(response)
+      for item in data['response']['docs']:
+        if item['g'] != dep.group_id:
+          continue
+        if item['a'] != dep.artifact_id:
+          continue
+        yield item['v']
+
+_remote_versions_cache: dict[tuple[str, str], dict[VersionKey, list[BuildVersion]]] = {}
+def fetch_remote_versions(dep: Dependency) -> dict[VersionKey, list[BuildVersion]]:
+  key = (dep.group_id, dep.artifact_id)
+  versions = _remote_versions_cache.get(key)
+  if versions is not None:
+    return versions
 
   minors = {}
-  for subUrl in RE_MVN_REPO_URL.findall(html):
-    v = RE_MVN_REPO_VERSION.findall(subUrl)
-    if not v: continue
-
+  for v in _fetch_from_maven_search(dep):
     try:
-      version = version_parse(v[0])
+      version = version_parse(v)
       minors.setdefault(VersionKey(version.major, version.minor), []).append(version)
     except KeyboardInterrupt:
       raise
-    except:
-      pass
-
-  return {minor: sort_versions(versions) for minor, versions in minors.items()}
+  versions = {minor: sort_versions(versions) for minor, versions in minors.items()}
+  _remote_versions_cache[key] = versions
+  return versions
 
 def sort_versions(versions: list[BuildVersion]) -> list[BuildVersion]:
   return sorted(versions, key=lambda v: v.version_number, reverse=True)
@@ -191,7 +212,7 @@ def _print_dependency(args, d: Dependency, properties):
     return
 
   if args.check or args.upgrade:
-    remote_versions = fetch_remove_versions(d)
+    remote_versions = fetch_remote_versions(d)
     latest_minor, latest_major = find_updates(remote_versions, d.version)
     if latest_minor:
       print('%32s %15s  ${%s} -> UPDATE AVAIL %s' % (d.artifact_id, d.version.version, d.version_variable, latest_minor.version))
@@ -201,7 +222,7 @@ def _print_dependency(args, d: Dependency, properties):
   print('%32s %15s  ${%s}' % (d.artifact_id, d.version.version, d.version_variable))
   if args.remote:
     version_key = VersionKey(d.version.major, d.version.minor)
-    remote_versions = fetch_remove_versions(d)
+    remote_versions = fetch_remote_versions(d)
     for k in sorted(remote_versions.keys(), reverse=True):
       if k < version_key: break
       versions = remote_versions[k]
