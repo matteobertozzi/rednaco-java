@@ -40,13 +40,15 @@ public final class IntUtil {
     return Math.max(1, (getWidth(v) + 7) >> 3);
   }
 
-  public static int unsignedVarLongSize(long v) {
-    int result = 0;
-    do {
-      result++;
-      v >>>= 7;
-    } while (v != 0);
-    return result;
+  private static final byte[] VAR_INT_LENGTHS = new byte[65];
+  static {
+    for (int i = 0; i <= 64; ++i) {
+      VAR_INT_LENGTHS[i] = (byte) (1 + ((63 - i) / 7));
+    }
+  }
+
+  public static int unsignedVarLongSize(final long v) {
+    return VAR_INT_LENGTHS[Long.numberOfLeadingZeros(v)];
   }
 
   public static int zigZagEncode(final int n) {

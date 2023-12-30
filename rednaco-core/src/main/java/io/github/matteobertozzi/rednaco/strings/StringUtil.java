@@ -88,6 +88,16 @@ public final class StringUtil {
     return len;
   }
 
+  public static int prefix(final String a, final int aOff, final int aLen, final String b, final int bOff, final int bLen) {
+    final int len = Math.min(aLen, bLen);
+    for (int i = 0; i < len; ++i) {
+      if (a.charAt(aOff + i) != b.charAt(bOff + i)) {
+        return i;
+      }
+    }
+    return len;
+  }
+
   public static int suffix(final String a, final String b) {
     final int aLen = a.length();
     final int bLen = b.length();

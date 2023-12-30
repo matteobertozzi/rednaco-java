@@ -108,6 +108,10 @@ public class IntArray {
     items[index] = value;
   }
 
+  public int removeLast() {
+    return items[--count];
+  }
+
   public void swap(final int aIndex, final int bIndex) {
     ArrayUtil.swap(items, aIndex, bIndex);
   }

@@ -17,7 +17,8 @@
 
 set -e
 
-PROJECT_IDS="rednaco-core rednaco-data rednaco-dispatcher rednaco-benchmarks"
+PROJECT_IDS="rednaco-core rednaco-data rednaco-plugins-processor rednaco-dispatcher rednaco-dispatcher-processor" # rednaco-benchmarks"
+#PROJECT_IDS="rednaco-dispatcher rednaco-dispatcher-processor" # rednaco-benchmarks"
 
 op_type="BUILD"
 mvn_cmds="clean install -DskipTests"

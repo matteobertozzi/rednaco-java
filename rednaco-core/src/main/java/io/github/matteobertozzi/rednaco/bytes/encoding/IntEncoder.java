@@ -69,35 +69,36 @@ public abstract class IntEncoder {
   //  Variable Size methods
   // ================================================================================
   public static int writeUnsignedVarLong(final byte[] buf, final int off, long v) {
-    int length = 0;
-    while ((v & 0xFFFFFFFFFFFFFF80L) != 0L) {
-      buf[off + length++] = (byte)((v & 0x7F) | 0x80);
+    final int length = IntUtil.unsignedVarLongSize(v);
+    final int zlength = length - 1;
+    for (int i = 0; i < zlength; ++i) {
+      buf[off + i] = ((byte) ((v & 0x7F) | 0x80));
       v >>>= 7;
     }
-    buf[off + length++] = (byte)(v & 0x7F);
+    buf[off + zlength] = (byte) (v & 0x7F);
     return length;
   }
 
   public static int writeUnsignedVarLong(final OutputStream stream, long v) throws IOException {
-    int length = 0;
-    while ((v & 0xFFFFFFFFFFFFFF80L) != 0L) {
-      stream.write((int)((v & 0x7F) | 0x80));
+    final int length = IntUtil.unsignedVarLongSize(v);
+    final int zlength = length - 1;
+    for (int i = 0; i < zlength; ++i) {
+      stream.write((int) ((v & 0x7F) | 0x80));
       v >>>= 7;
-      length++;
     }
     stream.write((int)(v & 0x7F));
-    return length + 1;
+    return length;
   }
 
   public static int writeUnsignedVarLong(final ByteArrayAppender stream, long v) {
-    int length = 0;
-    while ((v & 0xFFFFFFFFFFFFFF80L) != 0L) {
-      stream.add((int)((v & 0x7F) | 0x80));
+    final int length = IntUtil.unsignedVarLongSize(v);
+    final int zlength = length - 1;
+    for (int i = 0; i < zlength; ++i) {
+      stream.add((int) ((v & 0x7F) | 0x80));
       v >>>= 7;
-      length++;
     }
     stream.add((int)(v & 0x7F));
-    return length + 1;
+    return length;
   }
 
   // ================================================================================

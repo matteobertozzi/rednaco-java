@@ -39,21 +39,21 @@ public class BitEncoder {
   }
 
   public void add(final boolean value) {
-    add(value ? 1 : 0, 1);
+    addNoVerify(value ? 1 : 0, 1);
   }
 
   public void addZero() {
-    add(0, 1);
+    addNoVerify(0, 1);
   }
 
   public void addOne() {
-    add(1, 1);
+    addNoVerify(1, 1);
   }
 
   public void addSigned(final long value, final int bits) {
     if (value >= 0) {
       verify(value, bits - 1);
-      add(value, bits);
+      addNoVerify(value, bits);
     } else {
       final long signMask = (1L << (bits - 1));
       final long signedValue = ((-value) & (signMask - 1)) | signMask;
@@ -69,7 +69,10 @@ public class BitEncoder {
 
   public void add(final long value, final int bits) {
     verify(value, bits);
+    addNoVerify(value, bits);
+  }
 
+  private void addNoVerify(final long value, final int bits) {
     if (bits <= vBitsAvail) {
       vBitsAvail -= bits;
       vBuffer |= (value << vBitsAvail);

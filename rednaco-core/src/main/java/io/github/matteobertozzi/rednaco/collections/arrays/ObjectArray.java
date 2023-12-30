@@ -106,6 +106,10 @@ public class ObjectArray<T> {
     items[index] = value;
   }
 
+  public T removeLast() {
+    return items[--count];
+  }
+
   public void swap(final int aIndex, final int bIndex) {
     ArrayUtil.swap(items, aIndex, bIndex);
   }

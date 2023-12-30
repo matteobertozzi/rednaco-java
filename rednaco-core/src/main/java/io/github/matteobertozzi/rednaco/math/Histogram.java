@@ -66,6 +66,14 @@ public class Histogram {
     return Statistics.sum(events, 0, events.length);
   }
 
+  public long bounds(final int index) {
+    return bounds[index];
+  }
+
+  public long events(final int index) {
+    return events[index];
+  }
+
   public long sum() {
     return sum;
   }

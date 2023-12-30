@@ -44,7 +44,7 @@ public class TestBitCoding {
     final int N = 500_000;
     final Random rand = new Random();
     testRandWriteRead(N, true, bits -> {
-      System.out.println(bits + " -> " + BitUtil.mask(bits));
+      //System.out.println(bits + " -> " + BitUtil.mask(bits));
       return rand.nextLong(BitUtil.mask(Math.max(1, bits - 1)));
     });
   }

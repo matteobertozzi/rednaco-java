@@ -108,6 +108,14 @@ public class LongArray {
     items[index] = value;
   }
 
+  public long removeLast() {
+    return items[--count];
+  }
+
+  public void swap(final int aIndex, final int bIndex) {
+    ArrayUtil.swap(items, aIndex, bIndex);
+  }
+
   public void fill(final long value) {
     Arrays.fill(items, value);
   }

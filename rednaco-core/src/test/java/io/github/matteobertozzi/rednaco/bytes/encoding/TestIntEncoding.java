@@ -17,11 +17,16 @@
 
 package io.github.matteobertozzi.rednaco.bytes.encoding;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import io.github.matteobertozzi.rednaco.bytes.BytesUtil;
+import io.github.matteobertozzi.rednaco.bytes.PagedByteArray;
 import io.github.matteobertozzi.rednaco.util.RandData;
 
 public class TestIntEncoding {
@@ -199,6 +204,76 @@ public class TestIntEncoding {
         Arrays.fill(buf, (byte)0xff);
         IntEncoder.BIG_ENDIAN.writeFixed32(buf, off, v);
         Assertions.assertEquals(v, IntDecoder.BIG_ENDIAN.readFixed32(buf, off));
+      }
+    }
+  }
+
+  @Test
+  public void testVarIntEncode() {
+    final byte[] buf = new byte[9];
+    int len;
+
+    len = IntEncoder.writeUnsignedVarLong(buf, 0, 0);
+    Assertions.assertEquals(1, len);
+
+    len = IntEncoder.writeUnsignedVarLong(buf, 0, 1);
+    Assertions.assertEquals(1, len);
+    Assertions.assertArrayEquals(new byte[] { 1 }, Arrays.copyOf(buf, len));
+
+    len = IntEncoder.writeUnsignedVarLong(buf, 0, 127);
+    Assertions.assertEquals(1, len);
+    Assertions.assertArrayEquals(new byte[] { 127 }, Arrays.copyOf(buf, len));
+
+    len = IntEncoder.writeUnsignedVarLong(buf, 0, 128);
+    Assertions.assertEquals(2, len);
+    Assertions.assertArrayEquals(new byte[] { (byte)128, 1 }, Arrays.copyOf(buf, len));
+
+    len = IntEncoder.writeUnsignedVarLong(buf, 0, 0xff);
+    Assertions.assertEquals(2, len);
+    Assertions.assertArrayEquals(new byte[] { (byte)255, (byte)1 }, Arrays.copyOf(buf, len));
+
+    len = IntEncoder.writeUnsignedVarLong(buf, 0, 0xffff);
+    Assertions.assertEquals(3, len);
+    Assertions.assertArrayEquals(new byte[] { (byte)255, (byte)255, (byte)3 }, Arrays.copyOf(buf, len));
+
+    len = IntEncoder.writeUnsignedVarLong(buf, 0, 0xabcdef1234L);
+    Assertions.assertEquals(6, len);
+    Assertions.assertArrayEquals(new byte[] { (byte)0xb4, (byte)0xa4, (byte)0xbc, (byte)0xef, (byte)0xbc, 0x15 }, Arrays.copyOf(buf, len));
+  }
+
+  public static void main(final String[] args) {
+    System.out.println(BytesUtil.toHexString(new byte[] { -76, -92, -68, -17, -68, 21 }));
+  }
+
+  @Test
+  public void testRandVarIntEncodeDecode() throws IOException {
+    try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+      final PagedByteArray pagedBuf = new PagedByteArray();
+      final byte[] buf = new byte[9];
+      for (int k = 0; k < 10000; ++k) {
+        final long value = RandData.generateLong(0, Long.MAX_VALUE);
+        final int length = IntUtil.unsignedVarLongSize(value);
+
+        final int bufLen = IntEncoder.writeUnsignedVarLong(buf, 0, value);
+        Assertions.assertEquals(length, bufLen);
+        final byte[] rbuf = Arrays.copyOf(buf, length);
+
+        final int pagedBufLen = IntEncoder.writeUnsignedVarLong(pagedBuf, value);
+        Assertions.assertEquals(length, pagedBufLen);
+        Assertions.assertArrayEquals(rbuf, pagedBuf.toByteArray());
+
+        final int streamLen = IntEncoder.writeUnsignedVarLong(stream, value);
+        Assertions.assertEquals(length, streamLen);
+        Assertions.assertArrayEquals(rbuf, stream.toByteArray());
+
+        Assertions.assertEquals(value, IntDecoder.readUnsignedVarLong(buf, 0));
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(buf)) {
+          Assertions.assertEquals(value, IntDecoder.readUnsignedVarLong(buf, 0));
+        }
+
+        Arrays.fill(buf, (byte)0);
+        pagedBuf.clear();
+        stream.reset();
       }
     }
   }

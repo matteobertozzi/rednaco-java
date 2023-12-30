@@ -51,7 +51,15 @@ public final class BitUtil {
     return 1L << (Long.SIZE - Long.numberOfLeadingZeros(value - 1));
   }
 
+  private static final long[] BIT_MASKS = new long[65];
+  static {
+    for (int bits = 0; bits < 64; ++bits) {
+      BIT_MASKS[bits] = (1L << bits) - 1;
+    }
+    BIT_MASKS[64] = 0xffffffffffffffffL;
+  }
+
   public static long mask(final int bits) {
-    return (bits == 64) ? 0xffffffffffffffffL : ((1L << bits) - 1);
+    return BIT_MASKS[bits];
   }
 }
