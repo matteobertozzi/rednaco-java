@@ -17,10 +17,10 @@
 
 package io.github.matteobertozzi.rednaco.dispatcher;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 
-import io.github.matteobertozzi.easerinsights.logging.Logger;
-import io.github.matteobertozzi.rednaco.data.JsonFormat;
 import io.github.matteobertozzi.rednaco.dispatcher.message.Message;
 import io.github.matteobertozzi.rednaco.dispatcher.message.MessageError;
 import io.github.matteobertozzi.rednaco.dispatcher.message.MessageException;
@@ -34,21 +34,38 @@ import io.github.matteobertozzi.rednaco.dispatcher.session.AuthSessionProvider;
 
 public class MessageDispatcher {
   private final DispatcherProviders providers = new DispatcherProviders();
+  private final DispatcherExecutor inlineExecutor;
+  private final DispatcherExecutor asyncExecutors;
+  private final DispatcherExecutor executors;
   private Router router;
 
-  public Message execute(final DispatcherContext ctx, final UriMessage message) {
-    final RouteMatcher mapping = router.get(message.method(), RoutePathUtil.cleanPath(message.path()));
-    if (mapping == null) {
-      return MessageUtil.newErrorMessage(MessageError.notFound());
-    }
+  public MessageDispatcher() {
+    this(Executors.newWorkStealingPool());
+  }
 
-    try {
+  public MessageDispatcher(final ExecutorService defaultExecutors) {
+    this.inlineExecutor = DispatcherExecutor.inline();
+    this.asyncExecutors = DispatcherExecutor.of("async", Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("DispatcherAsyncExecutors").factory()));
+    this.executors = DispatcherExecutor.of("cpu", defaultExecutors);
+  }
+
+  public Message execute(final DispatcherContext ctx, final UriMessage message) {
+    ctx.stats().setQueuePushNs(System.nanoTime());
+    MessageRecorder.record(message);
+    final RouteMatcher mapping = router.get(message.method(), RoutePathUtil.cleanPath(message.path()));
+    Message response;
+    if (mapping != null) {
       ctx.setMatcher(mapping.matcher());
-      return mapping.executor().execute(ctx, message);
-    } catch (final Throwable e) {
-      Logger.error(e, "execution failed {} {}", message.method(), message.path());
-      return MessageUtil.newErrorMessage(MessageError.internalServerError());
+      response = switch (mapping.executionType()) {
+        case INLINE_FAST -> inlineExecutor.execTask(ctx, mapping, message);
+        case ASYNC, IO_SLOW -> asyncExecutors.submit(ctx, mapping, message);
+        default -> executors.submit(ctx, mapping, message);
+      };
+    } else {
+      response = MessageUtil.newErrorMessage(MessageError.notFound());
     }
+    MessageRecorder.record(message, response, ctx.stats());
+    return response;
   }
 
   public DispatcherProviders providers() {
@@ -64,7 +81,13 @@ public class MessageDispatcher {
   }
 
   public static abstract class DispatcherContext implements MessageContext {
-    private Matcher matcher = null;
+    private final MessageStats stats = new MessageStats();
+    private Matcher matcher;
+
+    @Override
+    public MessageStats stats() {
+      return stats;
+    }
 
     private void setMatcher(final Matcher matcher) {
       this.matcher = matcher;
@@ -75,14 +98,9 @@ public class MessageDispatcher {
     }
 
     public String pathVariable(final String name) { return matcher.group(name); }
-    public <T> T pathVariable(final String name, final Class<T> classOfT) {
-      return JsonFormat.INSTANCE.fromString(matcher.group(name), classOfT);
-    }
-
     public String pathPatternVariable(final int index) { return matcher.group(index); }
-    public <T> T pathPatternVariable(final int index, final Class<T> classOfT) {
-      return JsonFormat.INSTANCE.fromString(matcher.group(index), classOfT);
-    }
+
+    public abstract void writeAndFlush(Message message);
   }
 
   public static final class DispatcherProviders implements AuthSessionProvider {

@@ -32,6 +32,7 @@ public class MessageError {
     FORBIDDEN,
     UNAUTHORIZED,
     INTERNAL_SERVER_ERROR,
+    TOO_MANY_REQUESTS,
     NOT_MODIFIED,
   }
 
@@ -163,6 +164,11 @@ public class MessageError {
 
   public static MessageError newExpectationFailed(final Enum<?> status, final Object data, final LocalizedResource message, final Object... args) {
     return new MessageError(417, status, data, LocalizedText.INSTANCE.get(message, args));
+  }
+
+  private static final LocalizedResource TOO_MANY_REQUESTS_LOCALIZED_RESOURCE = new LocalizedResource("message.error.too.many.requests", "too many requests");
+  public static MessageError newTooManyRequests() {
+    return newTooManyRequests(ErrorStatus.TOO_MANY_REQUESTS, TOO_MANY_REQUESTS_LOCALIZED_RESOURCE);
   }
 
   public static MessageError newTooManyRequests(final Enum<?> status, final LocalizedResource message, final Object... args) {

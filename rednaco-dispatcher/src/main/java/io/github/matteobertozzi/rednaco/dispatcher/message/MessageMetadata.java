@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
+import io.github.matteobertozzi.rednaco.collections.lists.ListUtil;
 import io.github.matteobertozzi.rednaco.strings.StringConverter;
 
 public interface MessageMetadata {
@@ -69,17 +70,44 @@ public interface MessageMetadata {
   // --------------------------------------------------------------------------------
   // List lookup helpers
   // --------------------------------------------------------------------------------
-  default String[] getStringList(final String key, final String[] defaultValue) {
-    return StringConverter.toStringList(key, get(key), defaultValue);
+  default String[] getStringArray(final String key) {
+    final List<String> items = getList(key);
+    return ListUtil.isEmpty(items) ? null : items.toArray(new String[0]);
   }
 
-  default Set<String> getStringSet(final String key, final String[] defaultValue) {
-    final String[] items = getStringList(key, defaultValue);
+  default Set<String> getStringSet(final String key) {
+    final String[] items = getStringArray(key);
     return ArrayUtil.isEmpty(items) ? Set.of() : Set.of(items);
   }
 
-  default int[] getIntList(final String key, final int[] defaultValue) {
-    return StringConverter.toIntList(key, get(key), defaultValue);
+  default boolean[] getBooleanArray(final String key) {
+    // TODO
+    return null;
+  }
+
+  default short[] getShortArray(final String key) {
+    // TODO
+    return null;
+  }
+
+  default int[] getIntArray(final String key) {
+    // TODO
+    return null;
+  }
+
+  default long[] getLongArray(final String key) {
+    // TODO
+    return null;
+  }
+
+  default float[] getFloatArray(final String key) {
+    // TODO
+    return null;
+  }
+
+  default double[] getDoubleArray(final String key) {
+    // TODO
+    return null;
   }
 
   default String[] toStringArray() {

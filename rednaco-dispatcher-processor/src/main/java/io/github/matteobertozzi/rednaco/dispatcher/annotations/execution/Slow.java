@@ -30,4 +30,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.SOURCE)
 public @interface Slow {
+  enum SlowType { CPU_BOUND, IO_BOUND }
+  SlowType value();
 }

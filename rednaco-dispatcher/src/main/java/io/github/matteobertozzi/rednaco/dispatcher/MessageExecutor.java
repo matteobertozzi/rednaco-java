@@ -21,5 +21,7 @@ import io.github.matteobertozzi.rednaco.dispatcher.message.Message;
 
 @FunctionalInterface
 public interface MessageExecutor {
+  enum ExecutionType { DEFAULT, INLINE_FAST, ASYNC, CPU_SLOW, IO_SLOW }
+
   Message execute(MessageContext ctx, Message message) throws Exception;
 }

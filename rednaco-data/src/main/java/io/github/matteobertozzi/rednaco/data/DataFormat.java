@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serial;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -82,6 +84,18 @@ public abstract class DataFormat {
 
   public <T> T fromFile(final File file, final TypeReference<T> valueType) throws IOException {
     try (FileInputStream stream = new FileInputStream(file)) {
+      return fromStream(stream, valueType);
+    }
+  }
+
+  public <T> T fromFile(final Path path, final Class<T> valueType) throws IOException {
+    try (InputStream stream = Files.newInputStream(path)) {
+      return fromStream(stream, valueType);
+    }
+  }
+
+  public <T> T fromFile(final Path path, final TypeReference<T> valueType) throws IOException {
+    try (InputStream stream = Files.newInputStream(path)) {
       return fromStream(stream, valueType);
     }
   }

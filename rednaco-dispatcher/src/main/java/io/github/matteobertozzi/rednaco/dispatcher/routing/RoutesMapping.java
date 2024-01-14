@@ -21,6 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.github.matteobertozzi.rednaco.dispatcher.MessageExecutor;
+import io.github.matteobertozzi.rednaco.dispatcher.MessageExecutor.ExecutionType;
 
 public interface RoutesMapping {
   DirectRouteMapping[] directRouteMappings();
@@ -28,6 +29,7 @@ public interface RoutesMapping {
   PatternRouteMapping[] patternRouteMappings();
 
   interface RouteMatcher {
+    ExecutionType executionType();
     MessageExecutor executor();
     Matcher matcher();
   }
@@ -39,7 +41,7 @@ public interface RoutesMapping {
     RouteMatcher match(String path);
   }
 
-  record DirectRouteMapping(UriMethod[] methods, String uri, MessageExecutor executor) implements RouteMapping {
+  record DirectRouteMapping(UriMethod[] methods, String uri, ExecutionType executionType, MessageExecutor executor) implements RouteMapping {
     @Override
     public Matcher matcher() {
       return null;
@@ -51,8 +53,8 @@ public interface RoutesMapping {
     }
   }
 
-  record PatternRouteMatcher(Matcher matcher, MessageExecutor executor) implements RouteMatcher {}
-  record PatternRouteMapping(UriMethod[] methods, byte[] path, Pattern pattern, MessageExecutor executor) implements RouteMapping {
+  record PatternRouteMatcher(Matcher matcher, ExecutionType executionType, MessageExecutor executor) implements RouteMatcher {}
+  record PatternRouteMapping(UriMethod[] methods, Pattern pattern, ExecutionType executionType, MessageExecutor executor, byte[] path) implements RouteMapping {
     @Override
     public Matcher matcher() {
       throw new UnsupportedOperationException();
@@ -67,7 +69,7 @@ public interface RoutesMapping {
     public RouteMatcher match(final String path) {
       // TODO: carrier pool
       final Matcher m = pattern.matcher(path);
-      return m.matches() ? new PatternRouteMatcher(m, executor()) : null;
+      return m.matches() ? new PatternRouteMatcher(m, executionType(), executor()) : null;
     }
   }
 }

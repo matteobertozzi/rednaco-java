@@ -17,24 +17,28 @@
 
 package io.github.matteobertozzi.rednaco.dispatcher.routing;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.github.matteobertozzi.easerinsights.logging.Logger;
+import io.github.matteobertozzi.rednaco.collections.ImmutableCollections;
+import io.github.matteobertozzi.rednaco.collections.arrays.ArraySortUtil;
+import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.RoutesMapping.DirectRouteMapping;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.RoutesMapping.PatternRouteMapping;
 
 public class RouteBuilder {
-  private final RouterMap[] directMappings;
-  private final RouterTrie[] patternMappings;
+  private final ArrayList<PatternRouteMapping> patternMappings = new ArrayList<>();
+  private final ArrayList<DirectRouteMapping> directMappings = new ArrayList<>();
+  private final ArrayList<String> aliases = new ArrayList<>();
 
   public RouteBuilder() {
-    directMappings = new RouterMap[UriMethod.METHODS.length];
-    for (int m = 0; m < directMappings.length; ++m) {
-      directMappings[m] = new RouterMap();
-    }
+    // no-op
+  }
 
-    patternMappings = new RouterTrie[UriMethod.METHODS.length];
-    for (int m = 0; m < patternMappings.length; ++m) {
-      patternMappings[m] = new RouterTrie();
-    }
+  public void addAlias(final String alias, final String uriPrefix) {
+    aliases.add(alias);
+    aliases.add(uriPrefix);
   }
 
   public RouteBuilder add(final RoutesMapping mapping) {
@@ -45,8 +49,24 @@ public class RouteBuilder {
   }
 
   private void addToDirectMap(final DirectRouteMapping[] mappings) {
-    for (int i = 0; i < mappings.length; ++i) {
-      final DirectRouteMapping route = mappings[i];
+    if (ArrayUtil.isNotEmpty(mappings)) {
+      directMappings.addAll(ImmutableCollections.listOf(mappings));
+    }
+  }
+
+  private void addToPatternTrie(final PatternRouteMapping[] mappings) {
+    if (ArrayUtil.isNotEmpty(mappings)) {
+      patternMappings.addAll(ImmutableCollections.listOf(mappings));
+    }
+  }
+
+  private static RouterMap[] buildRouterMap(final List<DirectRouteMapping> mappings) {
+    final RouterMap[] directMappings = new RouterMap[UriMethod.METHODS.length];
+    for (int m = 0; m < directMappings.length; ++m) {
+      directMappings[m] = new RouterMap();
+    }
+
+    for (final DirectRouteMapping route: mappings) {
       final UriMethod[] methods = route.methods();
       for (int m = 0; m < methods.length; ++m) {
         final UriMethod method = methods[m];
@@ -54,11 +74,16 @@ public class RouteBuilder {
         Logger.trace("add direct mapping: {} {}", method, route.uri());
       }
     }
+    return directMappings;
   }
 
-  private void addToPatternTrie(final PatternRouteMapping[] mappings) {
-    for (int i = 0; i < mappings.length; ++i) {
-      final PatternRouteMapping route = mappings[i];
+  private static RouterTrie[] buildRouterTries(final List<PatternRouteMapping> mappings) {
+    final RouterTrie[] patternMappings = new RouterTrie[UriMethod.METHODS.length];
+    for (int m = 0; m < patternMappings.length; ++m) {
+      patternMappings[m] = new RouterTrie();
+    }
+
+    for (final PatternRouteMapping route: mappings) {
       final UriMethod[] methods = route.methods();
       for (int m = 0; m < methods.length; ++m) {
         final UriMethod method = methods[m];
@@ -66,9 +91,30 @@ public class RouteBuilder {
         Logger.trace("add pattern mapping: {} {}", method, route.pattern());
       }
     }
+    return patternMappings;
+  }
+
+  private static String[] buildAliases(final List<String> aliases) {
+    if (aliases.isEmpty()) return new String[0];
+
+    final String[] sortedAliases = aliases.toArray(new String[0]);
+    ArraySortUtil.sort(0, sortedAliases.length / 2,
+      (a, b) -> sortedAliases[b * 2].compareTo(sortedAliases[a * 2]),
+      (a, b) -> {
+        ArrayUtil.swap(sortedAliases, a * 2, b * 2);
+        ArrayUtil.swap(sortedAliases, (a * 2) + 1, (b * 2) + 1);
+      }
+    );
+    for (int i = 0; i < sortedAliases.length; i += 2) {
+      Logger.trace("add mapping alias: {} -> {}", sortedAliases[i], sortedAliases[i + 1]);
+    }
+
+    return sortedAliases;
   }
 
   public Router build() {
-    return new Router(directMappings, patternMappings);
+    final RouterMap[] routerMap = buildRouterMap(directMappings);
+    final RouterTrie[] routerTrie = buildRouterTries(patternMappings);
+    return new Router(buildAliases(aliases), routerMap, routerTrie);
   }
 }

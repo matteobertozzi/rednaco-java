@@ -20,6 +20,7 @@ package io.github.matteobertozzi.rednaco.threading;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+import io.github.matteobertozzi.easerinsights.logging.Logger;
 import io.github.matteobertozzi.rednaco.strings.HumansUtil;
 import io.github.matteobertozzi.rednaco.threading.ThreadUtil.ExecutableFunction;
 
@@ -34,9 +35,24 @@ public final class BenchUtil {
       runnable.run();
     }
     final long elapsed = System.nanoTime() - startTime;
-    System.out.println("[BENCH] " + name
+    System.err.println("[BENCH] " + name
       + " - " + HumansUtil.humanCount(count) + " runs took " + HumansUtil.humanTimeNanos(elapsed)
       + " " + HumansUtil.humanRate(count, elapsed, TimeUnit.NANOSECONDS));
+  }
+
+  public static void runInThreads(final String name, final int nThreads, final long count, final ExecutableFunction runnable) throws Throwable {
+    final long startTime = System.nanoTime();
+    ThreadUtil.runInThreads("bench-" + name, nThreads, () -> {
+      try {
+        run(name, count, runnable);
+      } catch (final Throwable e) {
+        Logger.error(e, "failed while running bench");
+      }
+    });
+    final long elapsed = System.nanoTime() - startTime;
+    System.err.println("[BENCH-TOTAL] " + name
+      + " - " + HumansUtil.humanCount(count * nThreads) + " runs took " + HumansUtil.humanTimeNanos(elapsed)
+      + " " + HumansUtil.humanRate(count * nThreads, elapsed, TimeUnit.NANOSECONDS));
   }
 
   public static void run(final String name, final Duration duration, final ExecutableFunction runnable) throws Throwable {
@@ -48,7 +64,7 @@ public final class BenchUtil {
       count++;
     }
     final long elapsed = System.nanoTime() - startTime;
-    System.out.println("[BENCH] " + name
+    System.err.println("[BENCH] " + name
       + " - " + HumansUtil.humanCount(count) + " runs took " + HumansUtil.humanTimeNanos(elapsed)
       + " " + HumansUtil.humanRate(count, elapsed, TimeUnit.NANOSECONDS));
   }
