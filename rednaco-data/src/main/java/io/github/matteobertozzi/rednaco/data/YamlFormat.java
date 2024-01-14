@@ -17,26 +17,26 @@
 
 package io.github.matteobertozzi.rednaco.data;
 
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
-public final class XmlFormat extends DataFormat {
-  public static final XmlFormat INSTANCE = new XmlFormat();
+public class YamlFormat extends DataFormat {
+  public static final YamlFormat INSTANCE = new YamlFormat();
 
-  //private static final ThreadLocal<XmlFormatMapper> mapper = ThreadLocal.withInitial(XmlFormatMapper::new);
-  private final XmlFormatMapper mapper = new XmlFormatMapper();
+  //private static final ThreadLocal<YamlFormatMapper> mapper = ThreadLocal.withInitial(YamlFormatMapper::new);
+  private final YamlFormatMapper mapper = new YamlFormatMapper();
 
-  private XmlFormat() {
+  private YamlFormat() {
     // no-op
   }
 
   @Override
   public String name() {
-    return "XML";
+    return "YAML";
   }
 
   @Override
   public String contentType() {
-    return "application/xml";
+    return "application/yaml";
   }
 
   @Override
@@ -44,9 +44,9 @@ public final class XmlFormat extends DataFormat {
     return mapper;
   }
 
-  private static final class XmlFormatMapper extends DataFormatMapper {
-    private XmlFormatMapper() {
-      super(new XmlMapper());
+  private static final class YamlFormatMapper extends DataFormatMapper {
+    private YamlFormatMapper() {
+      super(new YAMLMapper());
     }
   }
 }

@@ -18,22 +18,25 @@
 package io.github.matteobertozzi.rednaco.dispatcher.message;
 
 import java.io.DataOutput;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import io.github.matteobertozzi.rednaco.bytes.BytesUtil;
-import io.github.matteobertozzi.rednaco.collections.LongValue;
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
 import io.github.matteobertozzi.rednaco.data.CborFormat;
 import io.github.matteobertozzi.rednaco.data.DataFormat;
 import io.github.matteobertozzi.rednaco.data.JsonFormat;
 import io.github.matteobertozzi.rednaco.data.XmlFormat;
 import io.github.matteobertozzi.rednaco.data.YajbeFormat;
+import io.github.matteobertozzi.rednaco.data.YamlFormat;
 import io.github.matteobertozzi.rednaco.strings.StringUtil;
 
 public final class MessageUtil {
@@ -49,6 +52,7 @@ public final class MessageUtil {
   public static final String CONTENT_TYPE_TEXT_HTML = "text/html";
   public static final String CONTENT_TYPE_TEXT_XML = "text/xml";
   public static final String CONTENT_TYPE_APP_XML = "application/xml";
+  public static final String CONTENT_TYPE_APP_YAML = "application/yaml";
   public static final String CONTENT_TYPE_APP_CBOR = "application/cbor";
   public static final String CONTENT_TYPE_APP_JSON = "application/json";
   public static final String CONTENT_TYPE_APP_YAJBE = "application/yajbe";
@@ -101,16 +105,30 @@ public final class MessageUtil {
     return defaultFormat;
   }
 
-  public static <T> T parseContentType(final String accept, final T defaultFormat, final Function<String, T> parseFormat) {
-    if (StringUtil.isEmpty(accept)) return defaultFormat;
+  public static DataFormat parseContentType(final MessageMetadata metadata) {
+    return parseContentType(metadata, JsonFormat.INSTANCE);
+  }
 
-    T format = parseFormat.apply(accept);
+  public static DataFormat parseContentType(final MessageMetadata metadata, final DataFormat defaultFormat) {
+    return parseContentType(metadata, defaultFormat, MessageUtil::parseTypeToDataFormat);
+  }
+
+  public static <T> T parseContentType(final MessageMetadata metadata, final T defaultFormat,
+      final Function<String, T> parseFormat) {
+    final String accept = metadata.getString(METADATA_CONTENT_TYPE, null);
+    return parseContentType(accept, defaultFormat, parseFormat);
+  }
+
+  public static <T> T parseContentType(final String contentType, final T defaultFormat, final Function<String, T> parseFormat) {
+    if (StringUtil.isEmpty(contentType)) return defaultFormat;
+
+    T format = parseFormat.apply(contentType);
     if (format != null) return format;
 
-    int eof = accept.indexOf(';');
-    if (eof < 0) eof = accept.length();
+    int eof = contentType.indexOf(';');
+    if (eof < 0) eof = contentType.length();
 
-    final String type = accept.substring(0, eof);
+    final String type = contentType.substring(0, eof);
     format = parseFormat.apply(type.trim());
     return format != null ? format : defaultFormat;
   }
@@ -120,12 +138,18 @@ public final class MessageUtil {
       case CONTENT_TYPE_APP_CBOR -> CborFormat.INSTANCE;
       case CONTENT_TYPE_APP_JSON -> JsonFormat.INSTANCE;
       case CONTENT_TYPE_APP_YAJBE -> YajbeFormat.INSTANCE;
+      case CONTENT_TYPE_APP_YAML -> YamlFormat.INSTANCE;
       case CONTENT_TYPE_APP_XML, CONTENT_TYPE_TEXT_XML -> XmlFormat.INSTANCE;
       default -> null;
     };
   }
 
-  public static <T> T convertContent(final Message message, final Class<T> classOfT) {
+  public static <T> T convertInputContent(final Message message, final Class<T> classOfT) {
+    final DataFormat dataFormat = parseContentType(message.metadata());
+    return message.convertContent(dataFormat, classOfT);
+  }
+
+  public static <T> T convertOutputContent(final Message message, final Class<T> classOfT) {
     final DataFormat dataFormat = parseAcceptFormat(message.metadata());
     return message.convertContent(dataFormat, classOfT);
   }
@@ -133,16 +157,16 @@ public final class MessageUtil {
   // ====================================================================================================
   //  Message util
   // ====================================================================================================
-  public static Message newDataMessage(final Map<String, String> metadata, final Object data) {
-    return new ObjectMessage(metadata, data);
+  public static <T> Message newDataMessage(final Map<String, String> metadata, final T data) {
+    return new TypedMessage<T>(metadata, data);
   }
 
-  public static Message newDataMessage(final MessageMetadata metadata, final Object data) {
-    return new ObjectMessage(metadata, data);
+  public static <T> Message newDataMessage(final MessageMetadata metadata, final T data) {
+    return new TypedMessage<T>(metadata, data);
   }
 
-  public static Message newDataMessage(final Object data) {
-    return new ObjectMessage(EmptyMetadata.INSTANCE, data);
+  public static <T> Message newDataMessage(final T data) {
+    return new TypedMessage<T>(EmptyMetadata.INSTANCE, data);
   }
 
   public static Message newRawMessage(final Map<String, String> metadata, final byte[] content) {
@@ -193,57 +217,45 @@ public final class MessageUtil {
     return newRawMessage(metadata, text.getBytes(StandardCharsets.UTF_8));
   }
 
-  private static abstract class AbstractMessage implements Message {
-    private final MessageMetadata metadata;
-    private final long timestamp;
+  public static MessageFile newFileMessage(final File file) {
+    return newFileMessage(file, null);
+  }
 
-    protected AbstractMessage(final Map<String, String> metadata) {
-      this(new MessageMetadataMap(metadata));
-    }
+  public static MessageFile newFileMessage(final File file, final String contentType) {
+    final long length = file.length();
+    return newFileMessage(file.toPath(), contentType, 0, length, length);
+  }
 
-    protected AbstractMessage(final MessageMetadata metadata) {
-      this.metadata = metadata;
-      this.timestamp = System.nanoTime();
+  public static MessageFile newFileMessage(final File file, final String contentType, final long rangeOffset, final long rangeLength, final long length) {
+    return newFileMessage(file.toPath(), contentType, rangeOffset, rangeLength, length);
+  }
+
+  public static MessageFile newFileMessage(final Path path) throws IOException {
+    return newFileMessage(path, null);
+  }
+
+  public static MessageFile newFileMessage(final Path path, final String contentType) throws IOException {
+    final long length = Files.size(path);
+    return newFileMessage(path, contentType, 0, length, length);
+  }
+
+  public static MessageFile newFileMessage(final Path path, final String contentType, final long rangeOffset, final long rangeLength, final long length) {
+    final MessageMetadataMap metadata = new MessageMetadataMap();
+    if (contentType != null) metadata.add(METADATA_CONTENT_TYPE, contentType);
+    metadata.add(METADATA_CONTENT_LENGTH, length);
+    return new MessageFile(metadata, path, rangeOffset, rangeLength, length);
+  }
+
+  // ====================================================================================================
+  //  Messages
+  // ====================================================================================================
+  public record RawMessage(MessageMetadata metadata, byte[] content) implements Message {
+    public RawMessage(final Map<String, String> metadata, final byte[] content) {
+      this(new MessageMetadataMap(metadata), content);
     }
 
     @Override public Message retain() { return this; }
     @Override public Message release() { return this; }
-
-    @Override
-    public long timestampNs() {
-      return timestamp;
-    }
-
-    @Override
-    public MessageMetadata metadata() {
-      return metadata;
-    }
-
-    @Override
-    public int estimateSize() {
-      final LongValue size = new LongValue();
-      size.add(contentLength());
-      metadata.forEach((key, val) -> size.add(8 + key.length() + val.length()));
-      return size.intValue();
-    }
-  }
-
-  public static final class RawMessage extends AbstractMessage {
-    private final byte[] content;
-
-    public RawMessage(final Map<String, String> metadata, final byte[] content) {
-      super(metadata);
-      this.content = content;
-    }
-
-    public RawMessage(final MessageMetadata metadata, final byte[] content) {
-      super(metadata);
-      this.content = content;
-    }
-
-    public byte[] content() {
-      return content;
-    }
 
     @Override
     public int contentLength() {
@@ -271,32 +283,13 @@ public final class MessageUtil {
     }
   }
 
-  public static final class ObjectMessage extends TypedMessage<Object> {
-    private ObjectMessage(final Map<String, String> metadata, final Object data) {
-      super(metadata, data);
+  public record TypedMessage<TData>(MessageMetadata metadata, TData content) implements Message {
+    public TypedMessage(final Map<String, String> metadata, final TData content) {
+      this(new MessageMetadataMap(metadata), content);
     }
 
-    private ObjectMessage(final MessageMetadata metadata, final Object data) {
-      super(metadata, data);
-    }
-  }
-
-  public static class TypedMessage<TData> extends AbstractMessage {
-    private final TData data;
-
-    public TypedMessage(final Map<String, String> metadata, final TData data) {
-      super(metadata);
-      this.data = data;
-    }
-
-    public TypedMessage(final MessageMetadata metadata, final TData data) {
-      super(metadata);
-      this.data = data;
-    }
-
-    public TData content() {
-      return data;
-    }
+    @Override public Message retain() { return this; }
+    @Override public Message release() { return this; }
 
     @Override public int contentLength() { throw new UnsupportedOperationException(); }
     @Override public long writeContentToStream(final OutputStream stream) { throw new UnsupportedOperationException(); }
@@ -304,21 +297,17 @@ public final class MessageUtil {
 
     @Override
     public <T> T convertContent(final DataFormat format, final Class<T> classOfT) {
-      return format.convert(data, classOfT);
+      return format.convert(content(), classOfT);
     }
   }
 
-  public static final class ErrorMessage extends AbstractMessage {
-    private final MessageError error;
-
+  public record ErrorMessage(MessageMetadata metadata, MessageError error) implements Message {
     public ErrorMessage(final MessageError error) {
-      super(EmptyMetadata.INSTANCE);
-      this.error = error;
+      this(EmptyMetadata.INSTANCE, error);
     }
 
-    public MessageError error() {
-      return error;
-    }
+    @Override public Message retain() { return this; }
+    @Override public Message release() { return this; }
 
     @Override public int contentLength() { throw new UnsupportedOperationException(); }
     @Override public long writeContentToStream(final OutputStream stream) { throw new UnsupportedOperationException(); }
@@ -330,14 +319,13 @@ public final class MessageUtil {
     }
   }
 
-  public static final class EmptyMessage extends AbstractMessage {
+  public record EmptyMessage(MessageMetadata metadata) implements Message {
     private EmptyMessage(final Map<String, String> metadata) {
-      super(metadata);
+      this(new MessageMetadataMap(metadata));
     }
 
-    private EmptyMessage(final MessageMetadata metadata) {
-      super(metadata);
-    }
+    @Override public Message retain() { return this; }
+    @Override public Message release() { return this; }
 
     @Override public int contentLength() { return 0; }
     @Override public long writeContentToStream(final OutputStream stream) { return 0; }

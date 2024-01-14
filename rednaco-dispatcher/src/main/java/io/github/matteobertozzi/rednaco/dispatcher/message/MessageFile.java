@@ -18,53 +18,36 @@
 package io.github.matteobertozzi.rednaco.dispatcher.message;
 
 import java.io.DataOutput;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import io.github.matteobertozzi.rednaco.data.DataFormat;
-import io.github.matteobertozzi.rednaco.dispatcher.message.MessageUtil.EmptyMetadata;
 import io.github.matteobertozzi.rednaco.io.IOUtil;
+import io.github.matteobertozzi.rednaco.io.RuntimeIOException;
 
-public class MessageFile implements Message {
-  private final MessageMetadata metadata;
-  private final File file;
-  private final long timestamp;
-
-  public MessageFile(final File file) {
-    this(EmptyMetadata.INSTANCE, file);
-  }
-
-  public MessageFile(final MessageMetadata metadata, final File file) {
-    this.metadata = metadata;
-    this.file = file;
-    this.timestamp = System.nanoTime();
-  }
-
-  public MessageMetadata metadata() {
-    return metadata;
-  }
-
-  public File file() {
-    return file;
+public record MessageFile(MessageMetadata metadata, Path path, long rangeOffset, long rangeLength, long length) implements Message {
+  public boolean isPartialRange() {
+    return length != rangeLength;
   }
 
   @Override
   public int contentLength() {
-    return Math.toIntExact(file.length());
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public long writeContentToStream(final OutputStream stream) throws IOException {
-    try (FileInputStream inputStream = new FileInputStream(file)) {
+    try (InputStream inputStream = Files.newInputStream(path)) {
       return inputStream.transferTo(stream);
     }
   }
 
   @Override
   public long writeContentToStream(final DataOutput stream) throws IOException {
-    try (FileInputStream inputStream = new FileInputStream(file)) {
+    try (InputStream inputStream = Files.newInputStream(path)) {
       return IOUtil.copy(inputStream, stream);
     }
   }
@@ -72,16 +55,10 @@ public class MessageFile implements Message {
   @Override
   public <T> T convertContent(final DataFormat format, final Class<T> classOfT) {
     try {
-      return format.fromFile(file, classOfT);
+      return format.fromFile(path, classOfT);
     } catch (final IOException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeIOException(e);
     }
-  }
-
-  @Override
-  public int estimateSize() {
-    // TODO Auto-generated method stub
-    return 0;
   }
 
   @Override
@@ -92,10 +69,5 @@ public class MessageFile implements Message {
   @Override
   public Message release() {
     return this;
-  }
-
-  @Override
-  public long timestampNs() {
-    return timestamp;
   }
 }

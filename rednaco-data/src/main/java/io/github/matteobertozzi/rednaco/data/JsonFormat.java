@@ -22,7 +22,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 public final class JsonFormat extends DataFormat {
   public static final JsonFormat INSTANCE = new JsonFormat();
 
-  private static final ThreadLocal<JsonFormatMapper> mapper = ThreadLocal.withInitial(JsonFormatMapper::new);
+  //private static final ThreadLocal<JsonFormatMapper> mapper = ThreadLocal.withInitial(JsonFormatMapper::new);
+  private final JsonFormatMapper mapper = new JsonFormatMapper();
 
   private JsonFormat() {
     // no-op
@@ -40,7 +41,7 @@ public final class JsonFormat extends DataFormat {
 
   @Override
   protected DataFormatMapper get() {
-    return mapper.get();
+    return mapper;
   }
 
   private static final class JsonFormatMapper extends DataFormatMapper {

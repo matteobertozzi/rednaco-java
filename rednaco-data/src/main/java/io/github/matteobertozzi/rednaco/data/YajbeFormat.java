@@ -22,7 +22,8 @@ import io.github.matteobertozzi.yajbe.YajbeMapper;
 public class YajbeFormat extends DataFormat {
   public static final YajbeFormat INSTANCE = new YajbeFormat();
 
-  private static final ThreadLocal<YajbeFormatMapper> mapper = ThreadLocal.withInitial(YajbeFormatMapper::new);
+  //private static final ThreadLocal<YajbeFormatMapper> mapper = ThreadLocal.withInitial(YajbeFormatMapper::new);
+  private final YajbeFormatMapper mapper = new YajbeFormatMapper();
 
   private YajbeFormat() {
     // no-op
@@ -40,7 +41,7 @@ public class YajbeFormat extends DataFormat {
 
   @Override
   protected DataFormatMapper get() {
-    return mapper.get();
+    return mapper;
   }
 
   private static final class YajbeFormatMapper extends DataFormatMapper {

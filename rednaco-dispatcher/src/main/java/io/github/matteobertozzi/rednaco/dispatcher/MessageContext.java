@@ -18,5 +18,5 @@
 package io.github.matteobertozzi.rednaco.dispatcher;
 
 public interface MessageContext {
-
+  MessageStats stats();
 }

@@ -38,6 +38,16 @@ public final class QueueUtil {
     return queue != null ? queue.size() : 0;
   }
 
+  public static <T> boolean putWithoutInterrupt(final BlockingQueue<T> queue, final T item) {
+    try {
+      queue.put(item);
+      return true;
+    } catch (final InterruptedException e) {
+      Thread.interrupted();
+      return false;
+    }
+  }
+
   public static <T> T pollWithoutInterrupt(final BlockingQueue<T> queue, final long timeout, final TimeUnit unit) {
     try {
       return queue.poll(timeout, unit);

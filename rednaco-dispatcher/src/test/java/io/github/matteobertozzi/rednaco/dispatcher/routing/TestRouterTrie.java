@@ -23,6 +23,7 @@ import java.util.regex.Matcher;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import io.github.matteobertozzi.rednaco.dispatcher.MessageExecutor.ExecutionType;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.RoutePathUtil.RouterPathSpec;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.RoutesMapping.DirectRouteMapping;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.RoutesMapping.PatternRouteMapping;
@@ -75,12 +76,23 @@ public class TestRouterTrie {
     Assertions.assertNotNull(router.get(RoutePathUtil.cleanPath("/apis/aaaa/v1/ssss")));
   }
 
+  @Test
+  public void test4() {
+    final RouterTrie router = new RouterTrie();
+    routerPut(router, RoutePathUtil.parsePathWithVariables("/v1/aaa/{var}"));
+    Assertions.assertNotNull(router.get(RoutePathUtil.cleanPath("/v1/aaa/TEST")));
+    Assertions.assertNull(router.get(RoutePathUtil.cleanPath("/v1/bbb/TEST")));
+    routerPut(router, RoutePathUtil.parsePathWithVariables("/v1/bbb/{bar}"));
+    Assertions.assertNotNull(router.get(RoutePathUtil.cleanPath("/v1/aaa/TEST")));
+    Assertions.assertNotNull(router.get(RoutePathUtil.cleanPath("/v1/bbb/TEST")));
+  }
+
   private static void routerPut(final RouterTrie router, final RouterPathSpec spec) {
     if (spec.pattern() != null) {
-      router.put(spec.path(), new PatternRouteMapping(UriMethod.METHODS_POST, spec.path(), spec.pattern(), null));
+      router.put(spec.path(), new PatternRouteMapping(UriMethod.METHODS_POST, spec.pattern(), ExecutionType.DEFAULT, null, spec.path()));
     } else {
       final String uri = new String(spec.path(), 0, spec.path().length - 1);
-      router.put(spec.path(), new DirectRouteMapping(UriMethod.METHODS_POST, uri, null));
+      router.put(spec.path(), new DirectRouteMapping(UriMethod.METHODS_POST, uri, ExecutionType.DEFAULT, null));
     }
   }
 

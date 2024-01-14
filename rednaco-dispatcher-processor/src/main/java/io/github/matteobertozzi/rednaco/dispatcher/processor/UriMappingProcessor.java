@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,7 +50,11 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
+import io.github.matteobertozzi.rednaco.dispatcher.MessageExecutor.ExecutionType;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.NoTraceDump;
+import io.github.matteobertozzi.rednaco.dispatcher.annotations.execution.AsyncResult;
+import io.github.matteobertozzi.rednaco.dispatcher.annotations.execution.InlineFast;
+import io.github.matteobertozzi.rednaco.dispatcher.annotations.execution.Slow;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.message.HeaderValue;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.message.MetaParam;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.message.QueryParam;
@@ -164,33 +169,52 @@ public class UriMappingProcessor extends AbstractProcessor {
     final UriPrefix uriPrefix = element.getEnclosingElement().getAnnotation(UriPrefix.class);
     final UriMapping uri = element.getAnnotation(UriMapping.class);
     final boolean noTraceDump = element.getAnnotation(NoTraceDump.class) != null;
+    final ExecutionType execType = parseExecutionType(element);
     final String execMethodName = execMethodName(element);
     final String fullUri = (uriPrefix != null) ? uriPrefix.value() + uri.uri() : uri.uri();
-    return new DirectUriRoute(uri.method(), fullUri, execMethodName, noTraceDump);
+    return new DirectUriRoute(uri.method(), fullUri, execType, execMethodName, noTraceDump);
   }
 
   private PatternUriRoute parseUriVariableMapping(final Element element) {
     final UriPrefix uriPrefix = element.getEnclosingElement().getAnnotation(UriPrefix.class);
     final UriVariableMapping uri = element.getAnnotation(UriVariableMapping.class);
     final boolean noTraceDump = element.getAnnotation(NoTraceDump.class) != null;
+    final ExecutionType execType = parseExecutionType(element);
     final String execMethodName = execMethodName(element);
     final String fullUri = (uriPrefix != null) ? uriPrefix.value() + uri.uri() : uri.uri();
     final RouterPathSpec spec = RoutePathUtil.parsePathWithVariables(fullUri);
-    return new PatternUriRoute(uri.method(), fullUri, execMethodName, noTraceDump, spec.path(), spec.pattern());
+    return new PatternUriRoute(uri.method(), fullUri, execType, execMethodName, noTraceDump, spec.path(), spec.pattern());
   }
 
   private PatternUriRoute parseUriPatternMapping(final Element element) {
     final UriPrefix uriPrefix = element.getEnclosingElement().getAnnotation(UriPrefix.class);
     final UriPatternMapping uri = element.getAnnotation(UriPatternMapping.class);
     final boolean noTraceDump = element.getAnnotation(NoTraceDump.class) != null;
+    final ExecutionType execType = parseExecutionType(element);
     final String execMethodName = execMethodName(element);
     final String fullUri = (uriPrefix != null) ? uriPrefix.value() + uri.uri() : uri.uri();
     final RouterPathSpec spec = RoutePathUtil.parsePathWithPattern(fullUri);
-    return new PatternUriRoute(uri.method(), fullUri, execMethodName, noTraceDump, spec.path(), spec.pattern());
+    return new PatternUriRoute(uri.method(), fullUri, execType, execMethodName, noTraceDump, spec.path(), spec.pattern());
   }
 
-  public record DirectUriRoute(UriMethod[] methods, String uri, String execMethodName, boolean noTraceDump) {}
-  public record PatternUriRoute(UriMethod[] methods, String uri, String execMethodName, boolean noTraceDump, byte[] path, Pattern pattern) {}
+  private ExecutionType parseExecutionType(final Element element) {
+    if (element.getAnnotation(InlineFast.class) != null) {
+      return ExecutionType.INLINE_FAST;
+    } else if (element.getAnnotation(AsyncResult.class) != null) {
+      return ExecutionType.ASYNC;
+    } else if (element.getAnnotation(Slow.class) != null) {
+      final Slow slow = element.getAnnotation(Slow.class);
+      return switch (slow.value()) {
+        case CPU_BOUND -> ExecutionType.CPU_SLOW;
+        case IO_BOUND -> ExecutionType.IO_SLOW;
+      };
+    } else {
+      return ExecutionType.DEFAULT;
+    }
+  }
+
+  public record DirectUriRoute(UriMethod[] methods, String uri, ExecutionType execType, String execMethodName, boolean noTraceDump) {}
+  public record PatternUriRoute(UriMethod[] methods, String uri, ExecutionType execType, String execMethodName, boolean noTraceDump, byte[] path, Pattern pattern) {}
 
   private long methodSeqId = 0;
   private String execMethodName(final Element method) {
@@ -244,7 +268,7 @@ public class UriMappingProcessor extends AbstractProcessor {
 
       final JavaFileObject fileObject = processingEnv.getFiler().createSourceFile(ns + ".autogen." + resolverClassName);
       try (final FluentPrintWriter out = new FluentPrintWriter(fileObject.openWriter())) {
-        out.addLine("// Autogen from @UriMapping processor");
+        out.add("// Autogen from @UriMapping processor ").add(ZonedDateTime.now()).addLine();
         out.add("package ").add(ns).addLine(".autogen;");
         out.addLine();
         out.addLine("import java.util.regex.Pattern;");
@@ -253,7 +277,9 @@ public class UriMappingProcessor extends AbstractProcessor {
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageDispatcher;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageDispatcher.DispatcherProviders;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageDispatcher.DispatcherContext;");
+        out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageExecutor.ExecutionType;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.message.Message;");
+        out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.message.MessageMetadata;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.message.MessageUtil;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.routing.RoutesMapping;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMessage;");
@@ -281,7 +307,9 @@ public class UriMappingProcessor extends AbstractProcessor {
         for (final DirectUriRoute mapping: directMappings) {
           out.add("    new DirectRouteMapping(");
           writeUriMethods(out, mapping.methods());
-          out.add(", \"").add(mapping.uri()).add("\", ").add("this::").add(mapping.execMethodName()).addLine("),");
+          out.add(", \"").add(mapping.uri()).add("\", ");
+          out.add("ExecutionType.").add(mapping.execType().name()).add(", ");
+          out.add("this::").add(mapping.execMethodName()).addLine("),");
         }
         out.addLine("  };");
         // variable mappings
@@ -289,21 +317,22 @@ public class UriMappingProcessor extends AbstractProcessor {
         for (final PatternUriRoute mapping: variableMappings) {
           out.add("    new PatternRouteMapping(");
           writeUriMethods(out, mapping.methods());
-          out.add(", ");
-          writeByteArray(out, mapping.path());
           out.add(", ").add("Pattern.compile(\"").add(mapping.pattern()).add("\"), ");
-          out.add("this::").add(mapping.execMethodName()).addLine("),");
+          out.add("ExecutionType.").add(mapping.execType().name()).add(", ");
+          out.add("this::").add(mapping.execMethodName()).add(", ");
+          writeByteArray(out, mapping.path());
+          out.addLine("),");
         }
         out.addLine("  };");
         out.addLine("  private final PatternRouteMapping[] PATTERN_MAPPINGS = new PatternRouteMapping[] {");
         for (final PatternUriRoute mapping: patternMappings) {
           out.add("    new PatternRouteMapping(");
           writeUriMethods(out, mapping.methods());
-          //out.add(", \"").add(mapping.uri()).add("\", ");
-          out.add(", ");
-          writeByteArray(out, mapping.path());
           out.add(", ").add("Pattern.compile(\"").add(mapping.pattern()).add("\"), ");
-          out.add("this::").add(mapping.execMethodName()).addLine("),");
+          out.add("ExecutionType.").add(mapping.execType().name()).add(", ");
+          out.add("this::").add(mapping.execMethodName()).add(", ");
+          writeByteArray(out, mapping.path());
+          out.addLine("),");
         }
         out.addLine("  };");
         out.addLine();
@@ -403,35 +432,42 @@ public class UriMappingProcessor extends AbstractProcessor {
     // write execution method code
     code.indent().add("private Message ").add(execMethodName).add("(final MessageContext ctx, final Message inMsg) throws Exception ").openBlock();
 
-    // Extract Session Param
-    code.indent().add("// Session and Permissions").addLine();
-    final int sessionParamIndex = method.findSessionParam();
-    final String sessionVarName = (sessionParamIndex < 0) ? "session" : "p_" + method.param(sessionParamIndex).getSimpleName();
-    if (sessionParamIndex >= 0) {
-      final TypeMirror sessionType = method.paramType(sessionParamIndex);
-      verifyTokenSession(classBuilder.fullName, method.name(), uri, sessionType);
-      code.indent().addVariableDecl(sessionType, sessionVarName).add(" = ").add("dispatcher.verifySession(inMsg, ").add(sessionType).add(".class);").addLine();
-    }
-
-    if (requirePermission != null) {
-      if (sessionParamIndex < 0) {
-        final String sessionType = "AuthSession";
+    if (requirePermission != null || method.hasParams()) {
+      // Extract Session Param
+      code.indent().add("// Session and Permissions").addLine();
+      final int sessionParamIndex = method.findSessionParam();
+      final String sessionVarName = (sessionParamIndex < 0) ? "session" : "p_" + method.param(sessionParamIndex).getSimpleName();
+      if (sessionParamIndex >= 0) {
+        final TypeMirror sessionType = method.paramType(sessionParamIndex);
+        verifyTokenSession(classBuilder.fullName, method.name(), uri, sessionType);
         code.indent().addVariableDecl(sessionType, sessionVarName).add(" = ").add("dispatcher.verifySession(inMsg, ").add(sessionType).add(".class);").addLine();
       }
-      if (ArrayUtil.isNotEmpty(requirePermission.actions())) {
-        code.indent().add("dispatcher.requirePermissions(").add(sessionVarName).add(", \"").add(requirePermission.module()).add("\", ").add(permissionConstantName).add(");").addLine();
-      } else {
-        code.indent().add("dispatcher.requireOneOfPermission(").add(sessionVarName).add(", \"").add(requirePermission.module()).add("\", ").add(permissionConstantName).add(");").addLine();
-      }
-    }
 
-    // compute parameters
-    code.indent().add("// Parse Params").addLine();
-    for (int i = 0, n = method.paramCount(); i < n; ++i) {
-      if (i == sessionParamIndex) continue;
-      final VariableElement p = method.param(i);
-      final TypeMirror t = method.paramType(i);
-      processParamMapping(code, p, t);
+      if (requirePermission != null) {
+        if (sessionParamIndex < 0) {
+          final String sessionType = "AuthSession";
+          code.indent().addVariableDecl(sessionType, sessionVarName).add(" = ").add("dispatcher.verifySession(inMsg, ").add(sessionType).add(".class);").addLine();
+        }
+        if (ArrayUtil.isNotEmpty(requirePermission.actions())) {
+          code.indent().add("dispatcher.requirePermissions(").add(sessionVarName).add(", \"").add(requirePermission.module()).add("\", ").add(permissionConstantName).add(");").addLine();
+        } else {
+          code.indent().add("dispatcher.requireOneOfPermission(").add(sessionVarName).add(", \"").add(requirePermission.module()).add("\", ").add(permissionConstantName).add(");").addLine();
+        }
+      }
+
+      // compute parameters
+      code.indent().add("// Parse Params").addLine();
+      if (method.hasHeaderParams()) code.indent().add("final MessageMetadata metadata = inMsg.metadata();").addLine();
+      if (method.hasQueryParams()) code.indent().add("final MessageMetadata queryParams = ((UriMessage)inMsg).queryParams();").addLine();
+
+      for (int i = 0, n = method.paramCount(); i < n; ++i) {
+        if (i == sessionParamIndex) continue;
+        final VariableElement p = method.param(i);
+        final TypeMirror t = method.paramType(i);
+        processParamMapping(code, p, t);
+      }
+
+      code.indent().add("ctx.stats().setParamParseNs(System.nanoTime() - ctx.stats().execStartNs());").addLine();
     }
 
     // call the real method
@@ -459,6 +495,9 @@ public class UriMappingProcessor extends AbstractProcessor {
     } else if (isByteTypeArray(method.returnType())) {
       // raw bytes
       code.indent().add("return MessageUtil.newRawMessage(res);").addLine();
+    } else if (isFilePath(method.returnType())) {
+      // file path
+      code.indent().add("return MessageUtil.newFileMessage(res);").addLine();
     } else {
       // Java object
       code.indent().add("return MessageUtil.newDataMessage(res);").addLine();
@@ -475,40 +514,95 @@ public class UriMappingProcessor extends AbstractProcessor {
 
     if (param.getAnnotation(UriVariable.class) != null) {
       final UriVariable uriVariable = param.getAnnotation(UriVariable.class);
-      code.add("((DispatcherContext)ctx).pathVariable(\"").add(uriVariable.value()).add("\"");
-      if (!isString(paramType)) code.add(", ").add(paramType).add(".class");
-      code.add(")");
+      processPatternVariable(code, paramType, "((DispatcherContext)ctx).pathVariable(\"" + uriVariable.value() + "\")");
     } else if (param.getAnnotation(UriPattern.class) != null) {
       final UriPattern uriVariable = param.getAnnotation(UriPattern.class);
-      code.add("((DispatcherContext)ctx).pathPatternVariable(").add(uriVariable.value());
-      if (!isString(paramType)) code.add(", ").add(paramType).add(".class");
-      code.add(")");
+      processPatternVariable(code, paramType, "((DispatcherContext)ctx).pathPatternVariable(" + uriVariable.value() + ")");
     } else if (param.getAnnotation(HeaderValue.class) != null) {
       final HeaderValue headerValue = param.getAnnotation(HeaderValue.class);
-      code.add("((UriMessage)inMsg).metadataValue(\"").add(StringUtil.defaultIfEmpty(headerValue.name(), headerValue.value())).add("\"");
-      if (StringUtil.isNotEmpty(headerValue.defaultValue())) code.add(", \"").add(headerValue.defaultValue()).add("\"");
-      if (!isString(paramType)) code.add(", ").add(paramType).add(".class");
-      code.add(")");
+      processMetadataParam(code, "metadata", param, paramType, StringUtil.defaultIfEmpty(headerValue.value(), headerValue.name()), headerValue.defaultValue());
     } else if (param.getAnnotation(QueryParam.class) != null) {
       final QueryParam queryParam = param.getAnnotation(QueryParam.class);
-      code.add("((UriMessage)inMsg).queryParam(\"").add(StringUtil.defaultIfEmpty(queryParam.name(), queryParam.value())).add("\"");
-      if (StringUtil.isNotEmpty(queryParam.defaultValue())) code.add(", \"").add(queryParam.defaultValue()).add("\"");
-      if (!isString(paramType)) code.add(", ").add(paramType).add(".class");
-      code.add(")");
+      processMetadataParam(code, "queryParams", param, paramType, StringUtil.defaultIfEmpty(queryParam.value(), queryParam.name()), queryParam.defaultValue());
     } else if (param.getAnnotation(MetaParam.class) != null) {
       final MetaParam metaParam = param.getAnnotation(MetaParam.class);
+
       // ...
     } else if (isByteTypeArray(paramType)) {
-      code.add("inMsg.convertContentToBytes()");
+      code.add("inMsg.convertContentToBytes();");
     } else if (isSameType(paramType, messageType)) {
-      code.add("inMsg");
+      code.add("inMsg;");
     } else if (isTypeAssignable(paramType, messageType)) {
-      code.add("(").add(paramType).add(")").add("inMsg");
+      code.add("(").add(paramType).add(")").add("inMsg;");
     } else {
-      code.add("MessageUtil.convertContent(inMsg, ").add(paramType).add(".class)");
+      code.add("MessageUtil.convertInputContent(inMsg, ").add(paramType).add(".class);");
     }
 
-    code.add(";").addLine();
+    code.addLine();
+  }
+
+  private static void processPatternVariable(final CodeBuilder code, final TypeMirror paramType, final String fetchPathVariable) {
+    switch (paramType.getKind()) {
+      case BOOLEAN -> code.add("Boolean.parseBoolean(").add(fetchPathVariable).add(");");
+      case SHORT -> code.add("Short.parseShort(").add(fetchPathVariable).add(");");
+      case INT -> code.add("Integer.parseInt(").add(fetchPathVariable).add(");");
+      case LONG -> code.add("Long.parseLong(").add(fetchPathVariable).add(");");
+      case FLOAT -> code.add("Float.parseFloat(").add(fetchPathVariable).add(");");
+      case DOUBLE -> code.add("Double.parseDouble(").add(fetchPathVariable).add(");");
+      case DECLARED -> {
+        switch (paramType.toString()) {
+          case "java.lang.String" -> code.add(fetchPathVariable).add(";");
+          default -> throw new UnsupportedOperationException("unsupported @UriVariable type " + paramType.getKind() + " " + paramType);
+        }
+      }
+      default -> throw new UnsupportedOperationException("unsupported @UriVariable type " + paramType.getKind() + " " + paramType);
+    }
+  }
+
+  private static void processMetadataParam(final CodeBuilder code, final String metaParamName, final VariableElement param, final TypeMirror paramType, final String paramName, final String defaultValue) {
+    switch (paramType.getKind()) {
+      case BOOLEAN -> code.add(metaParamName).add(".getBoolean(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "false" : defaultValue).add(");");
+      case SHORT -> code.add(metaParamName).add(".getShort(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "0" : defaultValue).add(");");
+      case INT -> code.add(metaParamName).add(".getInt(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "0" : defaultValue).add(");");
+      case LONG -> code.add(metaParamName).add(".getLong(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "0" : defaultValue).add(");");
+      case FLOAT -> code.add(metaParamName).add(".getFloat(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "0" : defaultValue).add(");");
+      case DOUBLE -> code.add(metaParamName).add(".getDouble(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "0" : defaultValue).add(");");
+      case DECLARED -> {
+        switch (paramType.toString()) {
+          case "java.lang.String" -> code.add(metaParamName).add(".getString(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "null" : '"' + defaultValue + '"').add(");");
+          case "java.util.List<java.lang.String>" -> code.add(metaParamName).add(".getList(\"").add(paramName).add("\");");
+          case "java.util.Set<java.lang.String>" -> code.add(metaParamName).add(".getStringSet(\"").add(paramName).add("\");");
+          default -> throw new UnsupportedOperationException("unsupported " + paramName + " type " + paramType.getKind() + " " + paramType);
+        }
+      }
+      case ARRAY -> {
+        final TypeMirror componentType = ((ArrayType)paramType).getComponentType();
+        parseMetadataArrayParam(code, metaParamName, param, componentType, paramName, defaultValue);
+      }
+      default -> throw new UnsupportedOperationException("unsupported " + paramName + " type " + paramType.getKind() + " " + paramType);
+    }
+  }
+
+  private static void parseMetadataArrayParam(final CodeBuilder code, final String metaParamName, final VariableElement param, final TypeMirror paramType, final String paramName, final String defaultValue) {
+    if (StringUtil.isNotEmpty(defaultValue)) {
+      throw new UnsupportedOperationException("unsupported default value for Array param: " + param + " " + paramName + " " + defaultValue);
+    }
+
+    switch (paramType.getKind()) {
+      case BOOLEAN -> code.add(metaParamName).add(".getBooleanArray(\"").add(paramName).add("\");");
+      case SHORT -> code.add(metaParamName).add(".getShortArray(\"").add(paramName).add("\");");
+      case INT -> code.add(metaParamName).add(".getIntArray(\"").add(paramName).add("\");");
+      case LONG -> code.add(metaParamName).add(".getLongArray(\"").add(paramName).add("\");");
+      case FLOAT -> code.add(metaParamName).add(".getFloatArray(\"").add(paramName).add("\");");
+      case DOUBLE -> code.add(metaParamName).add(".getDoubleArray(\"").add(paramName).add("\");");
+      case DECLARED -> {
+        switch (paramType.toString()) {
+          case "java.lang.String" -> code.add(metaParamName).add(".getStringArray(\"").add(paramName).add("\");");
+          default -> throw new UnsupportedOperationException("unsupported " + paramName + " type " + paramType.getKind() + " " + paramType);
+        }
+      }
+      default -> throw new UnsupportedOperationException("unsupported " + paramName + " Array type " + paramType.getKind() + " " + paramType);
+    }
   }
 
   private void verifyPermissionConsistency(final String className, final String methodName, final String uri,
@@ -579,6 +673,10 @@ public class UriMappingProcessor extends AbstractProcessor {
       }
     }
 
+    public boolean hasParams() {
+      return !params.isEmpty();
+    }
+
     public int paramCount() {
       return params.size();
     }
@@ -600,6 +698,24 @@ public class UriMappingProcessor extends AbstractProcessor {
         index++;
       }
       return -1;
+    }
+
+    public boolean hasQueryParams() {
+      for (final VariableElement p: params) {
+        if (p.getAnnotation(QueryParam.class) != null || p.getAnnotation(MetaParam.class) != null) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public boolean hasHeaderParams() {
+      for (final VariableElement p: params) {
+        if (p.getAnnotation(HeaderValue.class) != null || p.getAnnotation(MetaParam.class) != null) {
+          return true;
+        }
+      }
+      return false;
     }
 
     public <T extends Annotation> T removeAnnotation(final Class<T> annotation) {
@@ -631,6 +747,16 @@ public class UriMappingProcessor extends AbstractProcessor {
       return arrayType.getComponentType().getKind() == TypeKind.BYTE;
     }
     return false;
+  }
+
+  private static boolean isFilePath(final TypeMirror paramType) {
+    switch (paramType.toString()) {
+      case "java.io.File":
+      case "java.nio.file.Path":
+        return true;
+      default:
+        return false;
+    }
   }
 
   public boolean isTypeAssignable(final TypeMirror t1, final TypeMirror t2) {

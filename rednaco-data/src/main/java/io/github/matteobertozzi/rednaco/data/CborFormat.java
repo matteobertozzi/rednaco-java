@@ -22,7 +22,8 @@ import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 public final class CborFormat extends DataFormat {
   public static final CborFormat INSTANCE = new CborFormat();
 
-  private static final ThreadLocal<CborFormatMapper> mapper = ThreadLocal.withInitial(CborFormatMapper::new);
+  //private static final ThreadLocal<CborFormatMapper> mapper = ThreadLocal.withInitial(CborFormatMapper::new);
+  private final CborFormatMapper mapper = new CborFormatMapper();
 
   private CborFormat() {
     // no-op
@@ -40,7 +41,7 @@ public final class CborFormat extends DataFormat {
 
   @Override
   protected DataFormatMapper get() {
-    return mapper.get();
+    return mapper;
   }
 
   private static final class CborFormatMapper extends DataFormatMapper {
