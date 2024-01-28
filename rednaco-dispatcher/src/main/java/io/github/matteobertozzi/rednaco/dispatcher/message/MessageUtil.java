@@ -43,6 +43,7 @@ public final class MessageUtil {
   public static final String METADATA_FOR_HTTP_METHOD = ":method";
   public static final String METADATA_FOR_HTTP_URI = ":uri";
   public static final String METADATA_FOR_HTTP_STATUS = ":status";
+  public static final String METADATA_AUTHORIZATION = "authorization";
   public static final String METADATA_ACCEPT = "accept";
   public static final String METADATA_CONTENT_TYPE = "content-type";
   public static final String METADATA_CONTENT_LENGTH = "content-length";
@@ -258,8 +259,8 @@ public final class MessageUtil {
     @Override public Message release() { return this; }
 
     @Override
-    public int contentLength() {
-      return BytesUtil.length(content);
+    public boolean hasContent() {
+      return BytesUtil.isNotEmpty(content);
     }
 
     @Override
@@ -281,6 +282,11 @@ public final class MessageUtil {
     public <T> T convertContent(final DataFormat format, final Class<T> classOfT) {
       return format.fromBytes(content, classOfT);
     }
+
+    @Override
+    public byte[] convertContentToBytes() {
+      return content;
+    }
   }
 
   public record TypedMessage<TData>(MessageMetadata metadata, TData content) implements Message {
@@ -291,9 +297,10 @@ public final class MessageUtil {
     @Override public Message retain() { return this; }
     @Override public Message release() { return this; }
 
-    @Override public int contentLength() { throw new UnsupportedOperationException(); }
+    @Override public boolean hasContent() { throw new UnsupportedOperationException(); }
     @Override public long writeContentToStream(final OutputStream stream) { throw new UnsupportedOperationException(); }
     @Override public long writeContentToStream(final DataOutput stream) { throw new UnsupportedOperationException(); }
+    @Override public byte[] convertContentToBytes() { throw new UnsupportedOperationException(); }
 
     @Override
     public <T> T convertContent(final DataFormat format, final Class<T> classOfT) {
@@ -309,9 +316,10 @@ public final class MessageUtil {
     @Override public Message retain() { return this; }
     @Override public Message release() { return this; }
 
-    @Override public int contentLength() { throw new UnsupportedOperationException(); }
+    @Override public boolean hasContent() { throw new UnsupportedOperationException(); }
     @Override public long writeContentToStream(final OutputStream stream) { throw new UnsupportedOperationException(); }
     @Override public long writeContentToStream(final DataOutput stream) { throw new UnsupportedOperationException(); }
+    @Override public byte[] convertContentToBytes() { throw new UnsupportedOperationException(); }
 
     @Override
     public <T> T convertContent(final DataFormat format, final Class<T> classOfT) {
@@ -327,10 +335,11 @@ public final class MessageUtil {
     @Override public Message retain() { return this; }
     @Override public Message release() { return this; }
 
-    @Override public int contentLength() { return 0; }
+    @Override public boolean hasContent() { return false; }
     @Override public long writeContentToStream(final OutputStream stream) { return 0; }
     @Override public long writeContentToStream(final DataOutput stream) { return 0; }
     @Override public <T> T convertContent(final DataFormat format, final Class<T> classOfT) { return null; }
+    @Override public byte[] convertContentToBytes() { return BytesUtil.EMPTY_BYTES; }
   }
 
   public static final class EmptyMetadata implements MessageMetadata {

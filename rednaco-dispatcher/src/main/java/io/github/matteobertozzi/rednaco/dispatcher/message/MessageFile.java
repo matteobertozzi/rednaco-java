@@ -34,8 +34,18 @@ public record MessageFile(MessageMetadata metadata, Path path, long rangeOffset,
   }
 
   @Override
-  public int contentLength() {
-    throw new UnsupportedOperationException();
+  public Message retain() {
+    return this;
+  }
+
+  @Override
+  public Message release() {
+    return this;
+  }
+
+  @Override
+  public boolean hasContent() {
+    return rangeLength != 0;
   }
 
   @Override
@@ -62,12 +72,13 @@ public record MessageFile(MessageMetadata metadata, Path path, long rangeOffset,
   }
 
   @Override
-  public Message retain() {
-    return this;
-  }
-
-  @Override
-  public Message release() {
-    return this;
+  public byte[] convertContentToBytes() {
+    final byte[] buf = new byte[Math.toIntExact(length)];
+    try (InputStream inputStream = Files.newInputStream(path)) {
+      inputStream.readNBytes(buf, Math.toIntExact(rangeOffset), buf.length);
+    } catch (final IOException e) {
+      throw new RuntimeIOException(e);
+    }
+    return buf;
   }
 }
