@@ -42,13 +42,20 @@ public abstract class SpinningThread extends Thread implements StopSignal {
     return running.get() && isAlive();
   }
 
+  public void wake() {
+    if (lock.tryLock()) {
+      try {
+        waitCond.signal();
+      } finally {
+        lock.unlock();
+      }
+    }
+  }
+
   @Override
   public boolean sendStopSignal() {
     running.set(false);
-    if (lock.tryLock()) {
-      waitCond.signal();
-      lock.unlock();
-    }
+    wake();
     return true;
   }
 
