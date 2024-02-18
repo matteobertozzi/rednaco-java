@@ -17,8 +17,11 @@
 
 package io.github.matteobertozzi.rednaco.collections.maps;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TestIndexedHashMap {
@@ -35,5 +38,48 @@ public class TestIndexedHashMap {
     final int NITEMS = 2_000;
     final Random rand = new Random();
     MapTestUtil.testIndexedRandAddRemoveVerify(NITEMS, () -> "k" + rand.nextInt(0, NITEMS), () -> "v" + rand.nextLong());
+  }
+
+  @Test
+  public void testIterator() {
+    final IndexedHashMap<String, String> map = new IndexedHashMap<>(8);
+    Iterator<Map.Entry<String, String>> it;
+
+    it = map.entrySet().iterator();
+    Assertions.assertFalse(it.hasNext());
+
+    map.add("A", "1");
+    it = map.entrySet().iterator();
+    Assertions.assertTrue(it.hasNext());
+    Assertions.assertEquals(Map.entry("A", "1"), it.next());
+
+    map.add("B", "2");
+    it = map.entrySet().iterator();
+    Assertions.assertTrue(it.hasNext());
+    Assertions.assertEquals(Map.entry("A", "1"), it.next());
+    Assertions.assertEquals(Map.entry("B", "2"), it.next());
+
+    map.add("C", "3");
+    it = map.entrySet().iterator();
+    Assertions.assertTrue(it.hasNext());
+    Assertions.assertEquals(Map.entry("A", "1"), it.next());
+    Assertions.assertEquals(Map.entry("B", "2"), it.next());
+    Assertions.assertEquals(Map.entry("C", "3"), it.next());
+
+    it = map.entrySet().iterator();
+    Assertions.assertEquals(3, map.size());
+    Assertions.assertTrue(it.hasNext());
+    Assertions.assertEquals(Map.entry("A", "1"), it.next());
+    it.remove();
+    Assertions.assertEquals(2, map.size());
+    Assertions.assertTrue(it.hasNext());
+    Assertions.assertEquals(Map.entry("B", "2"), it.next());
+    it.remove();
+    Assertions.assertEquals(1, map.size());
+    Assertions.assertTrue(it.hasNext());
+    Assertions.assertEquals(Map.entry("C", "3"), it.next());
+    it.remove();
+    Assertions.assertFalse(it.hasNext());
+    Assertions.assertEquals(0, map.size());
   }
 }
