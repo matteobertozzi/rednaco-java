@@ -18,6 +18,5 @@
 package io.github.matteobertozzi.rednaco.util.function;
 
 @FunctionalInterface
-public interface FailableLongConsumer {
-  void accept(long value) throws Exception;
+public interface FailableLongConsumer extends ThrowableLongConsumer<Exception> {
 }

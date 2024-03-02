@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package io.github.matteobertozzi.rednaco.util.function;
+ package io.github.matteobertozzi.rednaco.util.function;
 
-@FunctionalInterface
-public interface FailableConsumer<T> extends ThrowableConsumer<T, Exception> {
-}
+ @FunctionalInterface
+ public interface ThrowableLongConsumer<E extends Throwable> {
+   void accept(long value) throws E;
+ }

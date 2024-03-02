@@ -18,6 +18,5 @@
 package io.github.matteobertozzi.rednaco.util.function;
 
 @FunctionalInterface
-public interface FailableFunction<T, R> {
-  R apply(T t) throws Exception;
+public interface FailableFunction<T, R> extends ThrowableFunction<T, R, Exception> {
 }
