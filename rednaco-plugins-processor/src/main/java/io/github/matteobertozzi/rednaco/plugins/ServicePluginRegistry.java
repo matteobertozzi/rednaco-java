@@ -17,13 +17,18 @@
 
 package io.github.matteobertozzi.rednaco.plugins;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.ServiceLoader;
 import java.util.Set;
 
 import io.github.matteobertozzi.easerinsights.logging.Logger;
+import io.github.matteobertozzi.rednaco.strings.HumansTableView;
+import io.github.matteobertozzi.rednaco.strings.HumansUtil;
 import io.github.matteobertozzi.rednaco.util.BuildInfo;
+import io.github.matteobertozzi.rednaco.util.function.FailableConsumer;
 
 public final class ServicePluginRegistry {
   public static final ServicePluginRegistry INSTANCE = new ServicePluginRegistry();
@@ -83,5 +88,43 @@ public final class ServicePluginRegistry {
       plugin.destroy();
     }
     loadedPlugins.clear();
+  }
+
+  // ===============================================================================================
+  //  Loading plugin related
+  // ===============================================================================================
+  private record PluginServiceInitTime(String name, long loadTime) {}
+  public void loadPluginServices(final Set<String> modules, final FailableConsumer<ServicePlugin> consumer) throws Exception {
+    final long startTime = System.nanoTime();
+
+    final ArrayList<PluginServiceInitTime> pluginInitTimes = new ArrayList<>();
+
+    Logger.info("scanning for plugins. configured modules: {}", modules);
+    for (final ServicePlugin plugin: scanPlugins()) {
+      if (!modules.contains(plugin.serviceName())) {
+        Logger.info("plugin available, but not configured to be loaded: {}", plugin.serviceName());
+        continue;
+      }
+
+      Logger.info("loading feature: {}", plugin.serviceName());
+      final long pluginInitStartTime = System.nanoTime();
+      if (!load(plugin)) {
+        continue;
+      }
+
+      consumer.accept(plugin);
+
+      final long elapsed = System.nanoTime() - pluginInitStartTime;
+      pluginInitTimes.add(new PluginServiceInitTime(plugin.serviceName(), elapsed));
+      Logger.info("plugin '{}' init took {}", plugin.serviceName(), HumansUtil.humanTimeNanos(elapsed));
+    }
+
+    Collections.sort(pluginInitTimes, (a, b) -> Long.compare(b.loadTime(), a.loadTime()));
+    final HumansTableView tableView = new HumansTableView();
+    tableView.addColumns("Plugin Name", "Load Time");
+    for (final PluginServiceInitTime entry: pluginInitTimes) {
+      tableView.addRow(entry.name(), HumansUtil.humanTimeNanos(entry.loadTime()));
+    }
+    Logger.info("plugin services init took {}", HumansUtil.humanTimeSince(startTime));
   }
 }
