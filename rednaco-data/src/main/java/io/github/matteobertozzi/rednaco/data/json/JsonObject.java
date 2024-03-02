@@ -149,6 +149,14 @@ public class JsonObject extends JsonElement {
     return (JsonObject) members.get(memberName);
   }
 
+  public JsonArray getAsJsonArray(final String memberName) {
+    return (JsonArray) members.get(memberName);
+  }
+
+  public JsonPrimitive getAsJsonPrimitive(final String memberName) {
+    return (JsonPrimitive) members.get(memberName);
+  }
+
   @Override
   public int hashCode() {
     return members.hashCode();
