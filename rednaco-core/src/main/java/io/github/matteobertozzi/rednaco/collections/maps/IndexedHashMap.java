@@ -173,10 +173,11 @@ public class IndexedHashMap<K, V> extends AbstractMap<K, V> {
 
   private final class EntryIterator implements Iterator<Entry<K, V>> {
     private int index = 0;
+    private int count = 0;
 
     @Override
     public boolean hasNext() {
-      return index < buckets.size();
+      return count < buckets.size();
     }
 
     @Override
@@ -189,7 +190,21 @@ public class IndexedHashMap<K, V> extends AbstractMap<K, V> {
       }
       final int entryIndex = index << 1;
       index++;
+      count++;
       return Map.entry(ArrayUtil.getItemAt(entries, entryIndex), ArrayUtil.getItemAt(entries, entryIndex + 1));
+    }
+
+    @Override
+    public void remove() {
+      if (index <= 0) {
+        throw new IllegalStateException();
+      }
+
+      final int entryIndex = (index - 1) << 1;
+      if (removeKey(ArrayUtil.getItemAt(entries, entryIndex)) < 0) {
+        throw new IllegalStateException();
+      }
+      count--;
     }
   }
 }
