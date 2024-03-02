@@ -18,6 +18,5 @@
 package io.github.matteobertozzi.rednaco.util.function;
 
 @FunctionalInterface
-public interface FailableIntConsumer {
-  void accept(int value) throws Exception;
+public interface FailableIntConsumer extends ThrowableIntConsumer<Exception> {
 }
