@@ -18,6 +18,7 @@
 package io.github.matteobertozzi.rednaco.strings;
 
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,16 +49,27 @@ public final class TemplateUtil {
     return processTemplate(template, TEMPLATE_VAR_PATTERN, templateVars);
   }
 
-  public static String processTemplate(final String template, final Pattern templateVarPattern,
-      final Map<String, String> templateVars) {
+  public static String processTemplate(final String template, final Function<String, String> templateVarResolver) {
+    return processTemplate(template, TEMPLATE_VAR_PATTERN, templateVarResolver);
+  }
+
+  public static String processTemplate(final String template, final Pattern templateVarPattern, final Map<String, String> templateVars) {
+    return processTemplate(template, templateVarPattern, templateVars::get);
+  }
+
+  public static String processTemplate(final String template, final Pattern templateVarPattern, final Function<String, String> templateVarResolver) {
     final StringBuilder buf = new StringBuilder(template.length());
+    appendTemplate(buf, template, templateVarPattern, templateVarResolver);
+    return buf.toString();
+  }
+
+  public static void appendTemplate(final StringBuilder buf, final String template, final Pattern templateVarPattern, final Function<String, String> templateVarResolver) {
     final Matcher m = templateVarPattern.matcher(template);
     while (m.find()) {
       final String key = m.group(1);
-      final String text = templateVars.getOrDefault(key, "[" + key + "]");
-      m.appendReplacement(buf, Matcher.quoteReplacement(text));
+      final String text = templateVarResolver.apply(key);
+      m.appendReplacement(buf, Matcher.quoteReplacement(text != null ? text : '[' + key + ']'));
     }
     m.appendTail(buf);
-    return buf.toString();
   }
 }
