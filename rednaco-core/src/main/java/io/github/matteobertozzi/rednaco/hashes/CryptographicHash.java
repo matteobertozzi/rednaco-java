@@ -20,9 +20,10 @@ package io.github.matteobertozzi.rednaco.hashes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import io.github.matteobertozzi.rednaco.bytes.BytesUtil;
+
 public abstract class CryptographicHash extends AbstractHash<CryptographicHash> {
   public enum HashAlgo {
-    MD5("MD5"),
     SHA_1("SHA-1"),
     SHA_224("SHA-224"),
     SHA_256("SHA-256"),
@@ -53,6 +54,10 @@ public abstract class CryptographicHash extends AbstractHash<CryptographicHash> 
 
   public void digestTo(final byte[] buf) {
     digestTo(buf, 0, buf.length);
+  }
+
+  public String hexDigest() {
+    return BytesUtil.toHexString(digest());
   }
 
   public static CryptographicHash of(final HashAlgo algorithm) {

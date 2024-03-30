@@ -77,6 +77,7 @@ public class TestBase16 {
       final byte[] data = new byte[rand.nextInt(0, 1 << 20)];
       rand.nextBytes(data);
       final String encBytes = base16.encode(data);
+      Assertions.assertEquals(data.length * 2, encBytes.length());
       Assertions.assertArrayEquals(data, base16.decode(encBytes));
       Assertions.assertArrayEquals(data, base16.decode(encBytes.getBytes(StandardCharsets.UTF_8)));
     }

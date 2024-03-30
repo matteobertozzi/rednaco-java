@@ -266,6 +266,67 @@ public final class StringUtil {
     return items.toArray(new String[0]);
   }
 
+
+  // ================================================================================
+  // Text Replace related
+  // ================================================================================
+  public static String replace(final String s, final String repl, final String replWith) {
+    if (StringUtil.isEmpty(s)) return s;
+
+    int index = s.indexOf(repl);
+    if (index < 0) return s;
+
+    int prevIndex = 0;
+    final StringBuilder builder = new StringBuilder(s.length() - repl.length() + replWith.length());
+    while (index >= 0) {
+      builder.append(s, prevIndex, index);
+      builder.append(replWith);
+
+      prevIndex = index + repl.length();
+      index = s.indexOf(repl, prevIndex);
+    }
+    builder.append(s, prevIndex, s.length());
+    return builder.toString();
+  }
+
+  public static String replace(final String s, final char repl, final String replWith) {
+    if (StringUtil.isEmpty(s)) return s;
+
+    int index = s.indexOf(repl);
+    if (index < 0) return s;
+
+    int prevIndex = 0;
+    final StringBuilder builder = new StringBuilder(s.length() - 1 + replWith.length());
+    while (index >= 0) {
+      builder.append(s, prevIndex, index);
+      builder.append(replWith);
+
+      prevIndex = index + 1;
+      index = s.indexOf(repl, prevIndex);
+    }
+    builder.append(s, prevIndex, s.length());
+    return builder.toString();
+  }
+
+  public static String replace(final String s, final String repl, final char replWith) {
+    if (StringUtil.isEmpty(s)) return s;
+
+    int index = s.indexOf(repl);
+    if (index < 0) return s;
+
+    int prevIndex = 0;
+    final StringBuilder builder = new StringBuilder(s.length() - repl.length());
+    while (index >= 0) {
+      builder.append(s, prevIndex, index);
+      builder.append(replWith);
+
+      prevIndex = index + repl.length();
+      index = s.indexOf(repl, prevIndex);
+    }
+    builder.append(s, prevIndex, s.length());
+    return builder.toString();
+  }
+
   // ================================================================================
   //  String comparison related
   // ================================================================================
