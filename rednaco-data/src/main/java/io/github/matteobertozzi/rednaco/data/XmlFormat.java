@@ -22,7 +22,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 public final class XmlFormat extends DataFormat {
   public static final XmlFormat INSTANCE = new XmlFormat();
 
-  //private static final ThreadLocal<XmlFormatMapper> mapper = ThreadLocal.withInitial(XmlFormatMapper::new);
   private final XmlFormatMapper mapper = new XmlFormatMapper();
 
   private XmlFormat() {
