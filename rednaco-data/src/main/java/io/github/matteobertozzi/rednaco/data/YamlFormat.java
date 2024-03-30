@@ -22,7 +22,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 public class YamlFormat extends DataFormat {
   public static final YamlFormat INSTANCE = new YamlFormat();
 
-  //private static final ThreadLocal<YamlFormatMapper> mapper = ThreadLocal.withInitial(YamlFormatMapper::new);
   private final YamlFormatMapper mapper = new YamlFormatMapper();
 
   private YamlFormat() {
