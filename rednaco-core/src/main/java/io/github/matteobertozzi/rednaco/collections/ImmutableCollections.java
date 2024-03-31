@@ -39,7 +39,11 @@ public final class ImmutableCollections {
   }
 
   public static <T> Set<T> setOf(final T[] items) {
-    return new ImmutableSet<>(items);
+    return new ImmutableArraySet<>(items);
+  }
+
+  public static <T> Set<T> setOf(final List<T> items) {
+    return new ImmutableListSet<>(items);
   }
 
   public static <K, V> Map<K, V> mapOf(final K[] keys, final V[] values) {
@@ -69,10 +73,10 @@ public final class ImmutableCollections {
     }
   }
 
-  private static final class ImmutableSet<T> extends AbstractSet<T> {
+  private static final class ImmutableArraySet<T> extends AbstractSet<T> {
     private final T[] items;
 
-    public ImmutableSet(final T[] items) {
+    private ImmutableArraySet(final T[] items) {
       this.items = items;
     }
 
@@ -84,6 +88,29 @@ public final class ImmutableCollections {
     @Override
     public Iterator<T> iterator() {
       return new ArrayIterator<>(items);
+    }
+
+    @Override
+    public boolean addAll(final Collection<? extends T> c) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  private static final class ImmutableListSet<T> extends AbstractSet<T> {
+    private final List<T> items;
+
+    private ImmutableListSet(final List<T> items) {
+      this.items = items;
+    }
+
+    @Override
+    public int size() {
+      return items.size();
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+      return items.iterator();
     }
 
     @Override
