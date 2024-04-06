@@ -57,10 +57,26 @@ public final class MapUtil {
   // ================================================================================
   //  New Map related
   // ================================================================================
+  public static <K, V> Map<K, V> newHashMapFrom(final V[] values, final Function<V, K> keyMapper) {
+    final HashMap<K, V> map = HashMap.newHashMap(values.length);
+    for (final V value: values) {
+      map.put(keyMapper.apply(value), value);
+    }
+    return map;
+  }
+
   public static <K, V> Map<K, V> newHashMapFrom(final Collection<V> values, final Function<V, K> keyMapper) {
     final HashMap<K, V> map = HashMap.newHashMap(values.size());
     for (final V value: values) {
       map.put(keyMapper.apply(value), value);
+    }
+    return map;
+  }
+
+  public static <T, K, V> Map<K, V> newHashMapFrom(final T[] input, final Function<T, K> keyMapper, final Function<T, V> valueMapper) {
+    final HashMap<K, V> map = HashMap.newHashMap(input.length);
+    for (final T value: input) {
+      map.put(keyMapper.apply(value), valueMapper.apply(value));
     }
     return map;
   }

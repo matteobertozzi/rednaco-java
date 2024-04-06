@@ -168,8 +168,8 @@ public class TestStringUtil {
     Assertions.assertEquals("", StringUtil.capitalize(""));
 
     Assertions.assertEquals("Hello", StringUtil.capitalize("hello"));
-    Assertions.assertEquals("Hello", StringUtil.capitalize("hElLo"));
-    Assertions.assertEquals("Hello", StringUtil.capitalize("HeLlO"));
+    Assertions.assertEquals("Hello", StringUtil.capitalize("hElLo", true));
+    Assertions.assertEquals("Hello", StringUtil.capitalize("HeLlO", true));
     Assertions.assertEquals("HElLo", StringUtil.capitalize("hElLo", false));
     Assertions.assertEquals("HeLlO", StringUtil.capitalize("HeLlO", false));
   }

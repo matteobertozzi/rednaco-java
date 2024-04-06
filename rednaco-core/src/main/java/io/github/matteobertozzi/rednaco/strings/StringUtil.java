@@ -19,7 +19,9 @@ package io.github.matteobertozzi.rednaco.strings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.Map;
 
 public final class StringUtil {
   public static final char[] ALPHA_NUMERIC_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
@@ -122,7 +124,7 @@ public final class StringUtil {
   }
 
   public static String capitalize(final String value) {
-    return capitalize(value, true);
+    return capitalize(value, false);
   }
 
   public static String capitalize(final String value, final boolean everythingLower) {
@@ -266,6 +268,78 @@ public final class StringUtil {
     return items.toArray(new String[0]);
   }
 
+
+  // ================================================================================
+  // Join helpers
+  // ================================================================================
+  public static String join(final String delimiter, final String... items) {
+    return join(delimiter, items, 0, items.length);
+  }
+
+  public static String join(final String delimiter, final String[] items, final int offset, final int count) {
+    if (count == 0) return "";
+
+    int size = 0;
+    for (int i = 0; i < count; ++i) {
+      if (items[offset + i] != null) {
+        if (size > 0) size += delimiter.length();
+        size += items[offset + i].length();
+      }
+    }
+
+    final StringBuilder builder = new StringBuilder(size);
+    for (int i = 0; i < count; ++i) {
+      if (items[offset + i] != null) {
+        if (builder.length() > 0) builder.append(delimiter);
+        builder.append(items[offset + i]);
+      }
+    }
+    return builder.toString();
+  }
+
+  public static <T> String join(final String delimiter, final Collection<T> items) {
+    return join(delimiter, items, false);
+  }
+
+  public static <T> String join(final String delimiter, final Collection<T> items, final boolean preAndPostDelimiter) {
+    if (items == null || items.isEmpty()) return "";
+
+    int index = 0;
+    final StringBuilder builder = new StringBuilder(items.size() * (delimiter.length() + 8));
+    if (preAndPostDelimiter) builder.append(delimiter);
+    for (final T item: items) {
+      if (item == null) continue;
+
+      if (index++ != 0) builder.append(delimiter);
+      builder.append(item.toString());
+    }
+    if (preAndPostDelimiter) builder.append(delimiter);
+    return builder.toString();
+  }
+
+  public static String join(final String delimiter, final int count, final String symbol) {
+    if (count == 0) return "";
+
+    final StringBuilder builder = new StringBuilder(((count - 1) * delimiter.length()) + (count * symbol.length()));
+    builder.append(symbol);
+    for (int i = 1; i < count; ++i) {
+      builder.append(delimiter);
+      builder.append(symbol);
+    }
+    return builder.toString();
+  }
+
+  public static <T> String join(final String delimiter, final Map<String, T> dataMap, final String... keys) {
+    if (keys.length == 0) return "";
+
+    final StringBuilder builder = new StringBuilder(((keys.length - 1) * delimiter.length()));
+    builder.append(dataMap.get(keys[0]));
+    for (int i = 1; i < keys.length; ++i) {
+      builder.append(delimiter);
+      builder.append(keys[i]);
+    }
+    return builder.toString();
+  }
 
   // ================================================================================
   // Text Replace related
