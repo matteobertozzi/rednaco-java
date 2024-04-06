@@ -20,11 +20,7 @@ package io.github.matteobertozzi.rednaco.dispatcher.session;
 import io.github.matteobertozzi.rednaco.dispatcher.message.Message;
 import io.github.matteobertozzi.rednaco.dispatcher.message.MessageException;
 
-public interface AuthSessionProvider {
-  void registerSessionFactory(AuthSessionFactory factory);
-
-  <T extends AuthSession> T verifySession(Message message, Class<T> classOfT) throws MessageException;
-
-  void requirePermissions(AuthSession session, String module, String[] actions) throws MessageException;
-  void requireOneOfPermission(AuthSession session, String module, String[] actions) throws MessageException;
+public interface AuthSessionFactory {
+  Class<? extends AuthSession> sessionClass();
+  AuthSession createSession(Message message, Object data) throws MessageException;
 }
