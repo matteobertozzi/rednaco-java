@@ -21,6 +21,7 @@ import java.io.Writer;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -37,6 +38,7 @@ import javax.tools.JavaFileObject;
 
 import io.github.matteobertozzi.rednaco.strings.StringFormat;
 import io.github.matteobertozzi.rednaco.strings.StringUtil;
+import io.github.matteobertozzi.rednaco.strings.TemplateUtil;
 public class RecordEditorBuilderProcessor extends AbstractProcessor {
   @Override
   public SourceVersion getSupportedSourceVersion() {
@@ -76,26 +78,28 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
     final int bitmapSize = (recordComponents.size() + 63) >>> 6;
 
     final StringBuilder code = new StringBuilder();
+    TemplateUtil.appendTemplate(code, """
+    // autogen on ${now}
+    package ${ns}.autogen;
 
-    code.append("// autogen on ").append(ZonedDateTime.now()).append(System.lineSeparator());
-    code.append("package ").append(ns).append(".autogen;").append(System.lineSeparator());
-    code.append(System.lineSeparator());
+    import java.io.IOException;
+    import java.util.ArrayList;
+    import java.util.Objects;
+    import java.util.Set;
 
-    code.append("import java.io.IOException;").append(System.lineSeparator());
-    code.append("import java.util.ArrayList;").append(System.lineSeparator());
-    code.append("import java.util.Objects;").append(System.lineSeparator());
-    code.append("import java.util.Set;").append(System.lineSeparator());
-    code.append(System.lineSeparator());
-    code.append("import com.fasterxml.jackson.annotation.JsonProperty;").append(System.lineSeparator());
-    code.append("import com.fasterxml.jackson.core.JsonGenerator;").append(System.lineSeparator());
-    code.append("import com.fasterxml.jackson.databind.SerializerProvider;").append(System.lineSeparator());
-    code.append("import com.fasterxml.jackson.databind.annotation.JsonSerialize;").append(System.lineSeparator());
-    code.append("import com.fasterxml.jackson.databind.ser.std.StdSerializer;").append(System.lineSeparator());
-    code.append(System.lineSeparator());
-    code.append("import io.github.matteobertozzi.rednaco.collections.ImmutableCollections;").append(System.lineSeparator());
-    code.append("import io.github.matteobertozzi.rednaco.strings.StringBuilderUtil;").append(System.lineSeparator());
-    code.append("import ").append(ns).append(".autogen.").append(editorClassName).append('.').append(editorClassName).append("Serializer;").append(System.lineSeparator());
-    code.append(System.lineSeparator());
+    import com.fasterxml.jackson.core.JsonGenerator;
+    import com.fasterxml.jackson.databind.SerializerProvider;
+    import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+    import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+    import io.github.matteobertozzi.rednaco.collections.ImmutableCollections;
+    import io.github.matteobertozzi.rednaco.strings.StringBuilderUtil;
+    import ${ns}.autogen.${editorClassName}.${editorClassName}Serializer;
+    """, Map.of(
+      "now", ZonedDateTime.now().toString(),
+      "ns", ns,
+      "editorClassName", editorClassName
+    ));
 
     code.append("import ").append(recordElement.getQualifiedName()).append(';').append(System.lineSeparator());
     code.append(System.lineSeparator());
@@ -110,27 +114,52 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
     code.append(System.lineSeparator());
 
     // ctor()
-    code.append("  public ").append(editorClassName).append("() {").append(System.lineSeparator());
-    code.append("    // no-op (init with default values)").append(System.lineSeparator());
-    code.append("    this.hasOriginal = false;").append(System.lineSeparator());
-    code.append("  }").append(System.lineSeparator());
-    code.append(System.lineSeparator());
+    TemplateUtil.appendTemplate(code, """
+      public ${editorClassName}() {
+        // no-op (init with default values)
+        this.hasOriginal = false;
+      }
+
+    """, Map.of("editorClassName", editorClassName));
 
     // ctor(record)
-    code.append("  public ").append(editorClassName).append("(final ").append(recordName).append(" obj) {").append(System.lineSeparator());
-    code.append("    this.hasOriginal = true;").append(System.lineSeparator());
+    TemplateUtil.appendTemplate(code, """
+      public ${editorClassName}(final ${recordName} obj) {
+        if (this.hasOriginal = (obj != null)) {
+    """, Map.of(
+      "editorClassName", editorClassName,
+      "recordName", recordName
+    ));
     for (final RecordComponentElement component: recordComponents) {
       final String componentName = component.getSimpleName().toString();
       final TypeMirror componentType = component.asType();
 
       if (componentType.getKind().isPrimitive()) {
-        code.append("    this.").append(componentName).append("Original = obj.").append(componentName).append("();").append(System.lineSeparator());
-        code.append("    this.").append(componentName).append(" = obj.").append(componentName).append("();").append(System.lineSeparator());
+        TemplateUtil.appendTemplate(code, """
+              this.${componentName}Original = obj.${componentName}();
+              this.${componentName} = obj.${componentName}();
+        """, Map.of("componentName", componentName));
       } else {
-        code.append("    this.").append(componentName).append("Original = null;").append(System.lineSeparator());
-        code.append("    this.").append(componentName).append(" = obj.").append(componentName).append("();").append(System.lineSeparator());
+        TemplateUtil.appendTemplate(code, """
+              this.${componentName}Original = null;
+              this.${componentName} = obj.${componentName}();
+        """, Map.of("componentName", componentName));
       }
     }
+    code.append("    }").append(System.lineSeparator());
+    code.append("  }").append(System.lineSeparator());
+    code.append(System.lineSeparator());
+
+    // toRecord()
+    code.append("  public ").append(recordName).append(" toRecord() {").append(System.lineSeparator());
+    code.append("    return new ").append(recordName).append('(');
+    int fieldIndex = 0;
+    for (final RecordComponentElement component: recordComponents) {
+      if (fieldIndex != 0) code.append(", ");
+      code.append(component.getSimpleName().toString());
+      fieldIndex++;
+    }
+    code.append(");").append(System.lineSeparator());
     code.append("  }").append(System.lineSeparator());
     code.append(System.lineSeparator());
 
@@ -158,7 +187,7 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
     code.append(System.lineSeparator());
 
     // fields def, setter, getter, ...
-    int fieldIndex = 0;
+    fieldIndex = 0;
     for (final RecordComponentElement component: recordComponents) {
       final String componentName = component.getSimpleName().toString();
       final String capitalizedComponentName = StringUtil.capitalize(componentName);
@@ -167,57 +196,71 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
       final int bitmapGroup = fieldIndex >>> 6;
       final int bitmapIndex = fieldIndex & 63;
 
-      code.append(System.lineSeparator());
-      code.append("  // ----- ").append(componentName).append(" -----").append(System.lineSeparator());
-      code.append("  private ").append(componentType).append(' ').append(componentName).append("Original;").append(System.lineSeparator());
-      code.append("  private ").append(componentType).append(' ').append(componentName).append(';').append(System.lineSeparator());
-      code.append(System.lineSeparator());
+      final Map<String, String> componentVars = Map.of(
+        "capitalizedComponentName", capitalizedComponentName,
+        "componentName", componentName,
+        "componentType", componentType.toString(),
+        "bitmapFieldReset", String.valueOf(~(1L << bitmapIndex)),
+        "bitmapFieldSet", String.valueOf(1L << bitmapIndex),
+        "changesBitmap", "changesBitmap" + bitmapGroup
+      );
 
-      code.append("  public ").append(componentType).append(" ").append(componentName).append("() {").append(System.lineSeparator());
-      code.append("     return ").append(componentName).append(';').append(System.lineSeparator());
-      code.append("  }").append(System.lineSeparator());
-      code.append(System.lineSeparator());
+      TemplateUtil.appendTemplate(code, """
+        // ----- ${componentName} -----
+        private ${componentType} ${componentName}Original;
+        private ${componentType} ${componentName};
 
-      code.append("  public boolean ").append(componentName).append("HasChanges() {").append(System.lineSeparator());
-      code.append("    return (this.changesBitmap").append(bitmapGroup).append(" & ").append(1L << bitmapIndex).append("L) == ").append(1L << bitmapIndex).append("L;").append(System.lineSeparator());
-      code.append("  }").append(System.lineSeparator());
-      code.append(System.lineSeparator());
+        public ${componentType} ${componentName}() {
+          return ${componentName};
+        }
 
-      code.append("  public void set").append(capitalizedComponentName).append('(').append(componentType).append(" value) {").append(System.lineSeparator());
+        public boolean ${componentName}HasChanges() {
+          return (this.${changesBitmap} & ${bitmapFieldSet}L) == ${bitmapFieldSet}L;
+        }
+
+        public void replace${capitalizedComponentName}(final ${componentType} value) {
+          this.${componentName} = value;
+          this.${changesBitmap} |= ${bitmapFieldSet}L;
+        }
+
+      """, componentVars);
+
       if (isComponentPrimitive) {
-        code.append("    if (hasOriginal) {").append(System.lineSeparator());
-        code.append("      if (this.").append(componentName).append("Original == value) {").append(System.lineSeparator());
-        code.append("        this.changesBitmap").append(bitmapGroup).append(" &= ").append(~(1L << bitmapIndex)).append("L;").append(System.lineSeparator());
-        code.append("      } else {").append(System.lineSeparator());
-        code.append("        this.changesBitmap").append(bitmapGroup).append(" |= ").append(1L << bitmapIndex).append("L;").append(System.lineSeparator());
-        code.append("      }").append(System.lineSeparator());
-        code.append("    }").append(System.lineSeparator());
-        code.append("    this.").append(componentName).append(" = value;").append(System.lineSeparator());
-      } else {
-        code.append("    if (hasOriginal) {").append(System.lineSeparator());
-        code.append("      if (this.").append(componentName).append("Original == null) {").append(System.lineSeparator());
-        code.append("        if (Objects.equals(value, this.").append(componentName).append(")) {").append(System.lineSeparator());
-        code.append("          return;").append(System.lineSeparator());
-        code.append("        }").append(System.lineSeparator());
-        code.append("        this.").append(componentName).append("Original = this.").append(componentName).append(";").append(System.lineSeparator());
-        code.append("      } else if (Objects.equals(value, this.").append(componentName).append("Original)) {").append(System.lineSeparator());
-        code.append("        this.").append(componentName).append(" = ").append("this.").append(componentName).append("Original;").append(System.lineSeparator());
-        code.append("        this.").append(componentName).append("Original = null;").append(System.lineSeparator());
-        code.append("        this.changesBitmap").append(bitmapGroup).append(" &= ").append(~(1L << bitmapIndex)).append("L;").append(System.lineSeparator());
-        code.append("        return;").append(System.lineSeparator());
-        code.append("      }").append(System.lineSeparator());
-        code.append("    }").append(System.lineSeparator());
-        code.append("    this.").append(componentName).append(" = value;").append(System.lineSeparator());
-        code.append("    this.changesBitmap").append(bitmapGroup).append(" |= ").append(1L << bitmapIndex).append("L;").append(System.lineSeparator());
-      }
-      code.append("  }").append(System.lineSeparator());
-      code.append(System.lineSeparator());
+        TemplateUtil.appendTemplate(code, """
+          public void set${capitalizedComponentName}(final ${componentType} value) {
+            if (hasOriginal) {
+              if (this.${componentName}Original == value) {
+                this.${changesBitmap} &= ${bitmapFieldReset}L;
+              } else {
+                this.${changesBitmap} |= ${bitmapFieldSet}L;
+              }
+            }
+            this.${componentName} = value;
+          }
 
-      code.append("  public void replace").append(capitalizedComponentName).append('(').append(componentType).append(" value) {").append(System.lineSeparator());
-      code.append("    this.").append(componentName).append(" = value;").append(System.lineSeparator());
-      code.append("    this.changesBitmap").append(bitmapGroup).append(" |= ").append(1L << bitmapIndex).append("L;").append(System.lineSeparator());
-      code.append("  }").append(System.lineSeparator());
-      code.append(System.lineSeparator());
+        """, componentVars);
+      } else {
+        TemplateUtil.appendTemplate(code, """
+          public void set${capitalizedComponentName}(final ${componentType} value) {
+            if (hasOriginal) {
+              if (this.${componentName}Original == null) {
+                if (Objects.equals(value, this.${componentName})) {
+                  return;
+                }
+                this.${componentName}Original = this.${componentName};
+              } else if (Objects.equals(value, this.${componentName}Original)) {
+                this.${componentName} = this.${componentName}Original;
+                this.${componentName}Original = null;
+                this.${changesBitmap} &= ${bitmapFieldReset}L;
+                return;
+              }
+            }
+            this.${componentName} = value;
+            this.${changesBitmap} |= ${bitmapFieldSet}L;
+          }
+
+        """, componentVars);
+      }
 
       fieldIndex++;
     }
@@ -234,7 +277,7 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
     code.append("    }").append(System.lineSeparator());
     code.append(System.lineSeparator());
 
-    code.append("    final ArrayList<String> fields = new ArrayList(").append(recordComponents.size()).append(");").append(System.lineSeparator());
+    code.append("    final ArrayList<String> fields = new ArrayList<>(").append(recordComponents.size()).append(");").append(System.lineSeparator());
     for (final RecordComponentElement component: recordComponents) {
       final String componentName = component.getSimpleName().toString();
       code.append("    if (").append(componentName).append("HasChanges()) fields.add(\"").append(componentName).append("\");").append(System.lineSeparator());
@@ -244,22 +287,24 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
     code.append(System.lineSeparator());
 
     // toString()
-    code.append("  @Override").append(System.lineSeparator());
-    code.append("  public String toString() {").append(System.lineSeparator());
-    code.append("    final StringBuilder builder = new StringBuilder();").append(System.lineSeparator());
-    code.append("    builder.append(\"").append(editorClassName).append(" [\");").append(System.lineSeparator());
+    TemplateUtil.appendTemplate(code, """
+      @Override
+      public String toString() {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("${editorClassName} [");
+    """, Map.of("editorClassName", editorClassName));
     fieldIndex = 0;
     for (final RecordComponentElement component: recordComponents) {
       final String componentName = component.getSimpleName().toString();
-      if (fieldIndex != 0) {
-        code.append("    builder.append(\", ").append(componentName).append(":\");").append(System.lineSeparator());
-      } else {
-        code.append("    builder.append(\"").append(componentName).append(":\");").append(System.lineSeparator());
-      }
-      code.append("    StringBuilderUtil.appendValue(builder, ").append(componentName).append(");").append(System.lineSeparator());
-      code.append("    if (").append(componentName).append("HasChanges()) {").append(System.lineSeparator());
-      code.append("      StringBuilderUtil.appendValue(builder.append('/'), ").append(componentName).append("Original);").append(System.lineSeparator());
-      code.append("    }").append(System.lineSeparator());
+      TemplateUtil.appendTemplate(code, """
+          StringBuilderUtil.appendValue(builder.append("${fieldName}"), ${componentName});
+          if (${componentName}HasChanges()) {
+            StringBuilderUtil.appendValue(builder.append('/'), ${componentName}Original);
+          }
+      """, Map.of(
+        "componentName", componentName,
+        "fieldName", (((fieldIndex != 0) ? ", " : "") + componentName)
+      ));
       fieldIndex++;
     }
     code.append("    builder.append(\"]\");").append(System.lineSeparator());
@@ -268,14 +313,17 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
     code.append(System.lineSeparator());
 
     // serializer
-    code.append("  public static final class ").append(editorClassName).append("Serializer extends StdSerializer<").append(editorClassName).append("> {").append(System.lineSeparator());
-    code.append("    public ").append(editorClassName).append("Serializer() {").append(System.lineSeparator());
-    code.append("      this(").append(editorClassName).append(".class);").append(System.lineSeparator());
-    code.append("    }").append(System.lineSeparator());
-    code.append(System.lineSeparator());
-    code.append("    public ").append(editorClassName).append("Serializer(final Class<").append(editorClassName).append("> t) {").append(System.lineSeparator());
-    code.append("      super(t);").append(System.lineSeparator());
-    code.append("    }").append(System.lineSeparator());
+    TemplateUtil.appendTemplate(code, """
+      public static final class ${editorClassName}Serializer extends StdSerializer<${editorClassName}> {
+        public ${editorClassName}Serializer() {
+          this(${editorClassName}.class);
+        }
+
+        public ${editorClassName}Serializer(final Class<${editorClassName}> t) {
+          super(t);
+        }
+    """, Map.of("editorClassName", editorClassName));
+
     code.append(System.lineSeparator());
     code.append("    @Override").append(System.lineSeparator());
     code.append("    public void serialize(final ").append(editorClassName).append(" value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException {").append(System.lineSeparator());
@@ -293,25 +341,36 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
         default -> "writeObjectField";
       };
 
-      code.append("      jgen.").append(writeFieldFunc).append("(\"").append(componentName).append("\", value.").append(componentName).append(");").append(System.lineSeparator());
-      code.append("      if (value.").append(componentName).append("HasChanges()) {").append(System.lineSeparator());
-      code.append("        jgen.").append(writeFieldFunc).append("(\"").append(componentName).append("Original\", value.").append(componentName).append("Original);").append(System.lineSeparator());
-      code.append("      }").append(System.lineSeparator());
+      TemplateUtil.appendTemplate(code, """
+            jgen.${writeFieldFunc}("${componentName}", value.${componentName});
+            if (value.${componentName}HasChanges()) {
+              jgen.${writeFieldFunc}("${componentName}Original", value.${componentName}Original);
+            }
+      """, Map.of(
+        "writeFieldFunc", writeFieldFunc,
+        "componentName", componentName
+      ));
     }
-    code.append("      jgen.writeArrayFieldStart(\"_changes\");").append(System.lineSeparator());
-    code.append("      if (value.hasChanges()) {").append(System.lineSeparator());
+
+    TemplateUtil.appendTemplate(code, """
+          jgen.writeArrayFieldStart("_changes");
+          if (value.hasChanges()) {
+    """, Map.of());
     for (final RecordComponentElement component: recordComponents) {
       final String componentName = component.getSimpleName().toString();
-      code.append("      if (value.").append(componentName).append("HasChanges()) ");
-      code.append("jgen.writeString(\"").append(componentName).append("\");").append(System.lineSeparator());
+      TemplateUtil.appendTemplate(code, """
+              if (value.${componentName}HasChanges()) jgen.writeString("${componentName}");
+      """, Map.of("componentName", componentName));
     }
-    code.append("      }").append(System.lineSeparator());
-    code.append("      jgen.writeEndArray();").append(System.lineSeparator());
-    code.append("      jgen.writeEndObject();").append(System.lineSeparator());
-    code.append("    }").append(System.lineSeparator());
-    code.append("  }").append(System.lineSeparator());
+    TemplateUtil.appendTemplate(code, """
+          }
+          jgen.writeEndArray();
+          jgen.writeEndObject();
+        }
+      }
+    }
 
-    code.append("}").append(System.lineSeparator());
+    """, Map.of());
 
     // write java class
     writeJavaFile(ns, editorClassName, code.toString());

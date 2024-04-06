@@ -63,6 +63,10 @@ public final class TemplateUtil {
     return buf.toString();
   }
 
+  public static void appendTemplate(final StringBuilder buf, final String template, final Map<String, String> templateVars) {
+    appendTemplate(buf, template, TEMPLATE_VAR_PATTERN, templateVars::get);
+  }
+
   public static void appendTemplate(final StringBuilder buf, final String template, final Pattern templateVarPattern, final Function<String, String> templateVarResolver) {
     final Matcher m = templateVarPattern.matcher(template);
     while (m.find()) {
