@@ -25,6 +25,7 @@ import java.util.Map;
 
 import io.github.matteobertozzi.easerinsights.logging.LogBuffer;
 import io.github.matteobertozzi.easerinsights.logging.LogProvider.LogEntry;
+import io.github.matteobertozzi.easerinsights.logging.Logger;
 import io.github.matteobertozzi.easerinsights.tracing.Span;
 import io.github.matteobertozzi.easerinsights.tracing.Tracer;
 import io.github.matteobertozzi.rednaco.dispatcher.message.Message;
@@ -80,10 +81,11 @@ public final class MessageRecorder {
   }
 
   public static void record(final UriMessage request) {
+    Logger.debug("REQUEST: {} {}", request.method(), request.path());
   }
 
   public static void record(final UriMessage request, final Message response, final MessageStats stats) {
-
+    Logger.debug("RESPONSE: {} {} {}", request.method(), request.path(), response);
   }
 
   private static long millisToHumanDate(final long millis) {

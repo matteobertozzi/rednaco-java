@@ -30,6 +30,7 @@ import io.github.matteobertozzi.rednaco.dispatcher.routing.Router;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.RoutesMapping.RouteMatcher;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMessage;
 import io.github.matteobertozzi.rednaco.dispatcher.session.AuthSession;
+import io.github.matteobertozzi.rednaco.dispatcher.session.AuthSessionFactory;
 import io.github.matteobertozzi.rednaco.dispatcher.session.AuthSessionProvider;
 
 public class MessageDispatcher {
@@ -105,6 +106,11 @@ public class MessageDispatcher {
 
   public static final class DispatcherProviders implements AuthSessionProvider {
     private AuthSessionProvider sessionProvider;
+
+    @Override
+    public void registerSessionFactory(final AuthSessionFactory factory) {
+      sessionProvider.registerSessionFactory(factory);
+    }
 
     @Override
     public <T extends AuthSession> T verifySession(final Message message, final Class<T> classOfT) throws MessageException{
