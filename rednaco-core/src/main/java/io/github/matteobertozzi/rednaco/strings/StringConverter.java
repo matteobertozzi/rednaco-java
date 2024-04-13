@@ -34,8 +34,16 @@ public final class StringConverter {
   //  String helpers
   // ================================================================================
   public static String snakeToCamelCase(final String name) {
+    return snakeToCamelCase(name, true);
+  }
+
+  public static String snakeToCamelCase(final String name, final boolean capitalizeFirst) {
     final StringBuilder builder = new StringBuilder(name.length());
-    builder.append(Character.toUpperCase(name.charAt(0)));
+    if (capitalizeFirst) {
+      builder.append(Character.toUpperCase(name.charAt(0)));
+    } else {
+      builder.append(Character.toLowerCase(name.charAt(0)));
+    }
     for (int i = 1, n = name.length(); i < n; ++i) {
       final char c = name.charAt(i);
       if (c == '_') {
