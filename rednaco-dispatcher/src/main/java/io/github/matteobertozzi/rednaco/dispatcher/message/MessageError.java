@@ -126,7 +126,11 @@ public class MessageError {
   }
 
   public static MessageError newUnauthorized(final LocalizedResource message, final Object... args) {
-    return new MessageError(401, ErrorStatus.UNAUTHORIZED, LocalizedText.INSTANCE.get(message, args));
+    return newUnauthorized(ErrorStatus.UNAUTHORIZED, message, args);
+  }
+
+  public static MessageError newUnauthorized(final Enum<?> status, final LocalizedResource message, final Object... args) {
+    return new MessageError(401, status, LocalizedText.INSTANCE.get(message, args));
   }
 
   public static MessageError newForbidden(final LocalizedResource message, final Object... args) {
