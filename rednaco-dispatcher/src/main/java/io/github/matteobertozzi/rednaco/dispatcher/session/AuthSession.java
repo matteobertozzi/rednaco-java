@@ -18,5 +18,5 @@
 package io.github.matteobertozzi.rednaco.dispatcher.session;
 
 public interface AuthSession {
-
+  AuthSessionPermissions permissions();
 }
