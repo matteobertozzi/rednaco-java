@@ -159,15 +159,15 @@ public final class MessageUtil {
   //  Message util
   // ====================================================================================================
   public static <T> Message newDataMessage(final Map<String, String> metadata, final T data) {
-    return new TypedMessage<T>(metadata, data);
+    return new TypedMessage<>(metadata, data);
   }
 
   public static <T> Message newDataMessage(final MessageMetadata metadata, final T data) {
-    return new TypedMessage<T>(metadata, data);
+    return new TypedMessage<>(metadata, data);
   }
 
   public static <T> Message newDataMessage(final T data) {
-    return new TypedMessage<T>(EmptyMetadata.INSTANCE, data);
+    return new TypedMessage<>(EmptyMetadata.INSTANCE, data);
   }
 
   public static Message newRawMessage(final Map<String, String> metadata, final byte[] content) {
