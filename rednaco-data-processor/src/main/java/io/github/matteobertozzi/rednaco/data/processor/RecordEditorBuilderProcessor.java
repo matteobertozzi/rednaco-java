@@ -297,7 +297,7 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
     for (final RecordComponentElement component: recordComponents) {
       final String componentName = component.getSimpleName().toString();
       TemplateUtil.appendTemplate(code, """
-          StringBuilderUtil.appendValue(builder.append("${fieldName}"), ${componentName});
+          StringBuilderUtil.appendValue(builder.append("${fieldName}="), ${componentName});
           if (${componentName}HasChanges()) {
             StringBuilderUtil.appendValue(builder.append('/'), ${componentName}Original);
           }
@@ -382,7 +382,6 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
       try (Writer writer = fileObject.openWriter()) {
         writer.write(code.toString());
       }
-      log(code.toString());
     } catch (final Throwable e) {
       fatalError("unable to write {} class", className);
     }

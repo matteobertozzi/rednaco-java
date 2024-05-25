@@ -55,6 +55,7 @@ import io.github.matteobertozzi.rednaco.dispatcher.processor.UriMappingProcessor
 import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMethod;
 import io.github.matteobertozzi.rednaco.strings.StringFormat;
 import io.github.matteobertozzi.rednaco.strings.StringUtil;
+import io.github.matteobertozzi.rednaco.util.Verify.DataVerification;
 
 public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchClassBuilder> {
   // ====================================================================================================
@@ -276,7 +277,7 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
     final AllowPublicAccess allowPublicAccess = method.removeAnnotation(AllowPublicAccess.class);
     verifyPermissionConsistency(classBuilder.fullName, method.name(), uri, requirePermission, allowPublicAccess);
 
-    log("processing {class} {method}", classElement.getQualifiedName(), methodElement.getSimpleName());
+    //log("processing {class} {method}", classElement.getQualifiedName(), methodElement.getSimpleName());
 
     final String methodConstPrefix = execMethodName.toUpperCase();
 
@@ -332,6 +333,14 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
         final VariableElement p = method.param(i);
         final TypeMirror t = method.paramType(i);
         processParamMapping(code, p, t);
+      }
+
+      // verify data args
+      for (int i = 0, n = method.paramCount(); i < n; ++i) {
+        final VariableElement p = method.param(i);
+        if (isTypeAssignable(p.asType(), DataVerification.class)) {
+          code.indent().add("p_").add(p.getSimpleName().toString()).add(".verifyData();").addLine();
+        }
       }
 
       code.indent().add("ctx.stats().setParamParseNs(System.nanoTime() - ctx.stats().execStartNs());").addLine();

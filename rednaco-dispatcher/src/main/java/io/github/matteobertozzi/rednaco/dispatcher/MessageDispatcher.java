@@ -65,7 +65,9 @@ public class MessageDispatcher {
     } else {
       response = MessageUtil.newErrorMessage(MessageError.notFound());
     }
-    MessageRecorder.record(message, response, ctx.stats());
+    if (response != null) {
+      MessageRecorder.record(message, response, ctx.stats());
+    }
     return response;
   }
 
