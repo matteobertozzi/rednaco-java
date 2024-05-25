@@ -81,6 +81,9 @@ class DispatcherExecutor {
     } catch (final MessageException e) {
       Logger.error("execution failed {} {}: {}", message.method(), message.path(), e.getMessageError());
       return MessageUtil.newErrorMessage(e.getMessageError());
+    } catch (final IllegalArgumentException e) {
+      Logger.error("illegal argument {} {}: {}", message.method(), message.path(), e.getMessage());
+      return MessageUtil.newErrorMessage(MessageError.newBadRequestError(e.getMessage()));
     } catch (final Throwable e) {
       Logger.error(e, "execution failed {} {}", message.method(), message.path());
       return MessageUtil.newErrorMessage(MessageError.internalServerError());
@@ -131,6 +134,8 @@ class DispatcherExecutor {
         decQueueSize();
 
         final Message response = execTask(ctx, mapping, message);
+        MessageRecorder.record(message, response, ctx.stats());
+
         message.release();
         ctx.writeAndFlush(response);
 

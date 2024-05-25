@@ -230,6 +230,12 @@ public abstract class AbstractUriMappingProcessor<T> extends AbstractProcessor {
     }
   }
 
+  protected boolean isTypeAssignable(final TypeMirror t1, final Class<?> t2) {
+    final Elements elements = processingEnv.getElementUtils();
+    final Types types = processingEnv.getTypeUtils();
+    return processingEnv.getTypeUtils().isAssignable(t1, types.getDeclaredType(elements.getTypeElement(t2.getCanonicalName())));
+  }
+
   protected boolean isTypeAssignable(final TypeMirror t1, final TypeMirror t2) {
     return processingEnv.getTypeUtils().isAssignable(t1, t2);
   }

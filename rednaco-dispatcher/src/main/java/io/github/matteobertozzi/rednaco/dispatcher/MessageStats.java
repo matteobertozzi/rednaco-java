@@ -70,4 +70,10 @@ public class MessageStats {
   public void setLastByteWrNs(final long lastByteWrNs) {
     this.lastByteWrNs = lastByteWrNs;
   }
+  @Override
+  public String toString() {
+    return "MessageStats [firstByteNs=" + firstByteNs + ", headersNs=" + headersNs + ", fullMsgNs=" + fullMsgNs
+        + ", queuePushNs=" + queuePushNs + ", paramParseNs=" + paramParseNs + ", execStartNs=" + execStartNs
+        + ", execEndNs=" + execEndNs + ", lastByteWrNs=" + lastByteWrNs + "]";
+  }
 }

@@ -36,7 +36,6 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
@@ -80,7 +79,7 @@ public class UriMappingDocProcessor extends AbstractUriMappingProcessor<DocsClas
     for (final DocsClassBuilder builder: builders) {
       builder.write(writer);
     }
-    processingEnv.getMessager().printMessage(Kind.NOTE, writer.toString());
+
     try {
       final FileObject fileObject = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "docs/endpoints.yaml");
       try (final Writer out = fileObject.openWriter()) {

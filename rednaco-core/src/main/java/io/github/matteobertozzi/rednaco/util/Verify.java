@@ -654,4 +654,8 @@ public class Verify {
       return argName;
     }
   }
+
+  public interface DataVerification {
+    void verifyData() throws IllegalArgumentException;
+  }
 }
