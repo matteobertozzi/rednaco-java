@@ -23,12 +23,22 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import io.github.matteobertozzi.easerinsights.logging.LogBuffer;
 import io.github.matteobertozzi.easerinsights.logging.LogProvider.LogEntry;
 import io.github.matteobertozzi.easerinsights.logging.Logger;
 import io.github.matteobertozzi.easerinsights.tracing.Span;
 import io.github.matteobertozzi.easerinsights.tracing.Tracer;
+import io.github.matteobertozzi.rednaco.bytes.BytesUtil;
+import io.github.matteobertozzi.rednaco.data.DataFormat;
+import io.github.matteobertozzi.rednaco.data.json.JsonUtil;
 import io.github.matteobertozzi.rednaco.dispatcher.message.Message;
+import io.github.matteobertozzi.rednaco.dispatcher.message.MessageFile;
+import io.github.matteobertozzi.rednaco.dispatcher.message.MessageUtil;
+import io.github.matteobertozzi.rednaco.dispatcher.message.MessageUtil.EmptyMessage;
+import io.github.matteobertozzi.rednaco.dispatcher.message.MessageUtil.ErrorMessage;
+import io.github.matteobertozzi.rednaco.dispatcher.message.MessageUtil.TypedMessage;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMessage;
 import io.github.matteobertozzi.rednaco.time.TimeUtil;
 
@@ -81,11 +91,57 @@ public final class MessageRecorder {
   }
 
   public static void record(final UriMessage request) {
-    Logger.debug("REQUEST: {} {}", request.method(), request.path());
+    Logger.debug("----------\nREQUEST: {} {}\nHEADERS: {}\nBODY: {}\n----------",
+      request.method(), request.path(),
+      request.metadata(),
+      contentToString(request));
   }
 
   public static void record(final UriMessage request, final Message response, final MessageStats stats) {
-    Logger.debug("RESPONSE: {} {} {}", request.method(), request.path(), response);
+    try {
+      if (response == null) {
+        Logger.debug(new Exception(), "----------\nRESPONSE: {} {} - NONE\nSTATS: {}\n-----", request.method(), request.path(), stats);
+        return;
+      }
+      Logger.debug("----------\nRESPONSE: {} {} {}\nSTATS: {}\nHEADERS: {}\nBODY: {}\n----------",
+        httpStatus(response), request.method(), request.path(), stats,
+        response.metadata(), contentToString(response));
+    } catch (final Throwable e) {
+      Logger.error(e, "unable to dump response {} {} {}", request.method(), request.path(), response.metadata());
+    }
+  }
+
+  private static String httpStatus(final Message response) {
+    final String status = response.metadataValue(MessageUtil.METADATA_FOR_HTTP_STATUS);
+    if (status != null) return status;
+
+    return switch (response) {
+      case final EmptyMessage emptyResult -> "204";
+      case final ErrorMessage errorResult -> String.valueOf(errorResult.error().statusCode());
+      default -> "200";
+    };
+  }
+
+  private static String contentToString(final Message message) {
+    final String r = switch (message) {
+      case final TypedMessage<?> objResult -> JsonUtil.toJson(objResult.content());
+      case final EmptyMessage emptyResult -> "NO-CONTENT";
+      case final ErrorMessage errorResult -> JsonUtil.toJson(errorResult.error());
+      case final MessageFile fileResult -> "file:" + fileResult.path();
+      default -> {
+        if (!message.hasContent()) {
+          yield "NO-CONTENT";
+        }
+        final DataFormat dataFormat = MessageUtil.parseContentType(message.metadata(), null);
+        if (dataFormat != null) {
+          yield message.convertContent(dataFormat, JsonNode.class).toString();
+        } else if (message.metadataValue(MessageUtil.METADATA_CONTENT_TYPE).equals(MessageUtil.CONTENT_TYPE_TEXT_PLAIN)) {
+          yield new String(message.convertContentToBytes());
+        }
+        yield BytesUtil.toHexString(message.convertContentToBytes());
+      }
+    };
+    return r.length() > 1024 ? r.substring(0, 1024) : r;
   }
 
   private static long millisToHumanDate(final long millis) {

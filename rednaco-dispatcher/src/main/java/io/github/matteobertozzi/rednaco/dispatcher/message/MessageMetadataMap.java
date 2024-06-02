@@ -144,6 +144,7 @@ public class MessageMetadataMap  implements MessageMetadata {
     return entries;
   }
 
+  @Override
   public List<Map.Entry<String, String>> entries() {
     if (isEmpty()) return Collections.emptyList();
 

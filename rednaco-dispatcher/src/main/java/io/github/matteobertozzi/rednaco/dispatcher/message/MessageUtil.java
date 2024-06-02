@@ -297,7 +297,7 @@ public final class MessageUtil {
     @Override public Message retain() { return this; }
     @Override public Message release() { return this; }
 
-    @Override public boolean hasContent() { throw new UnsupportedOperationException(); }
+    @Override public boolean hasContent() { return content() != null; }
     @Override public long writeContentToStream(final OutputStream stream) { throw new UnsupportedOperationException(); }
     @Override public long writeContentToStream(final DataOutput stream) { throw new UnsupportedOperationException(); }
     @Override public byte[] convertContentToBytes() { throw new UnsupportedOperationException(); }
@@ -355,6 +355,10 @@ public final class MessageUtil {
     @Override public String get(final String key) { return null; }
     @Override public List<String> getList(final String key) { return null; }
 
+    @Override public List<Map.Entry<String, String>> entries() { return List.of(); }
+
     @Override public void forEach(final BiConsumer<? super String, ? super String> action) { }
+
+    @Override public String toString() { return "{}"; }
   }
 }

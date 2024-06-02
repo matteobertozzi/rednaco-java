@@ -56,6 +56,7 @@ public class Verify {
   private static final LocalizedResource LOCALIZED_VALUE_IS_NOT_VALID = new LocalizedResource("verify.arg.value.is.not.valid", "is not valid");
   private static final LocalizedResource LOCALIZED_VALUE_MUST_BE_TYPE = new LocalizedResource("verify.arg.must.be.type", "must be a {0}");
   private static final LocalizedResource LOCALIZED_VALUE_NOT_IN_LIST = new LocalizedResource("verify.arg.value.is.not.valid.not.in.list", "value {0} is not acceptable. expected one of {1}");
+  private static final LocalizedResource LOCALIZED_INVALID_COLOR = new LocalizedResource("verify.arg.color.is.not.valid", "must be a valid #ffffff color got '{0:color}'");
 
   private Verify() {
     // no-op
@@ -629,6 +630,12 @@ public class Verify {
   public static String expectValidUuid(final String name, final String uuid) {
     if (StringUtil.isNotEmpty(uuid) && UUID_PATTERN.matcher(uuid).matches()) return uuid;
     throw new VerifyArgInvalidArgumentException(name, LOCALIZED_INVALID_UUID, UUID_REGEX, uuid);
+  }
+
+  private static final Pattern COLOR_PATTERN = Pattern.compile("#[0-9a-fA-F]{6}");
+  public static String expectValidHexRgbColor(final String name, final String color) {
+    if (StringUtil.isNotEmpty(color) && COLOR_PATTERN.matcher(color).matches()) return color;
+    throw new VerifyArgInvalidArgumentException(name, LOCALIZED_INVALID_COLOR, color);
   }
 
   // ================================================================================

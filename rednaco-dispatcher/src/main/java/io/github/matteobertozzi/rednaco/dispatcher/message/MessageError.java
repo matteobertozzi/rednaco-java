@@ -151,11 +151,19 @@ public class MessageError {
   }
 
   public static MessageError newConflict(final Enum<?> status, final LocalizedResource message, final Object... args) {
-    return new MessageError(409, status, LocalizedText.INSTANCE.get(message, args));
+    return newConflict(status, null, message, args);
+  }
+
+  public static MessageError newConflict(final Enum<?> status, final Object data, final LocalizedResource message, final Object... args) {
+    return new MessageError(409, status, data, LocalizedText.INSTANCE.get(message, args));
   }
 
   public static MessageError newPreconditionFailed(final Enum<?> status, final LocalizedResource message, final Object... args) {
-    return new MessageError(412, status, LocalizedText.INSTANCE.get(message, args));
+    return newPreconditionFailed(status, null, message, args);
+  }
+
+  public static MessageError newPreconditionFailed(final Enum<?> status, final Object data, final LocalizedResource message, final Object... args) {
+    return new MessageError(412, status, data, LocalizedText.INSTANCE.get(message, args));
   }
 
   public static MessageError newPayloadTooLarge(final Enum<?> status, final LocalizedResource message, final Object... args) {

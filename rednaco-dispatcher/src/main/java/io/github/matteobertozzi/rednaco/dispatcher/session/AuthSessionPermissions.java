@@ -82,6 +82,23 @@ public record AuthSessionPermissions(Map<String, String[]> moduleRoles) {
     return false;
   }
 
+  @Override
+  public boolean equals(final Object obj) {
+    if (obj == this) return true;
+    if (!(obj instanceof final AuthSessionPermissions other)) {
+      return false;
+    }
+    if (moduleRoles().size() != other.moduleRoles().size()) {
+      return false;
+    }
+    for (final String module: moduleRoles().keySet()) {
+      if (!Arrays.equals(moduleRoles(module), other.moduleRoles(module))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public static AuthSessionPermissions fromJson(final JsonElement json) {
     if (json == null || !json.isJsonObject()) {
       return AuthSessionPermissions.EMPTY_PERMISSIONS;
