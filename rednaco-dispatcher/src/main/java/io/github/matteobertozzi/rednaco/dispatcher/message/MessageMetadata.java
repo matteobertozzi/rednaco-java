@@ -19,6 +19,7 @@ package io.github.matteobertozzi.rednaco.dispatcher.message;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
@@ -32,6 +33,8 @@ public interface MessageMetadata {
 
   String get(String key);
   List<String> getList(String key);
+
+  List<Map.Entry<String, String>> entries();
 
   void forEach(final BiConsumer<? super String, ? super String> action);
 
