@@ -52,6 +52,7 @@ public class Verify {
   private static final LocalizedResource LOCALIZED_MUST_NOT_BE_EMPTY = new LocalizedResource("verify.arg.must.not.be.empty", "must not be empty");
   private static final LocalizedResource LOCALIZED_MUST_NOT_BE_EQUAL_TO = new LocalizedResource("verify.arg.must.not.be.equal.to", "must not be equals to {0}");
   private static final LocalizedResource LOCALIZED_MUST_NOT_BE_NULL = new LocalizedResource("verify.arg.must.not.be.null", "must not be null");
+  private static final LocalizedResource LOCALIZED_MUST_BE_NULL = new LocalizedResource("verify.arg.must.be.null", "must be null");
   private static final LocalizedResource LOCALIZED_VALUE_IN_BLACK_LIST = new LocalizedResource("verify.arg.value.is.not.valid.in.list", "value {0} is not allowed");
   private static final LocalizedResource LOCALIZED_VALUE_IS_NOT_VALID = new LocalizedResource("verify.arg.value.is.not.valid", "is not valid");
   private static final LocalizedResource LOCALIZED_VALUE_MUST_BE_TYPE = new LocalizedResource("verify.arg.must.be.type", "must be a {0}");
@@ -66,6 +67,16 @@ public class Verify {
     if (!isValid) {
       throw new VerifyArgInvalidArgumentException(name, LOCALIZED_VALUE_IS_NOT_VALID);
     }
+  }
+
+  // ================================================================================
+  //  Verify Null
+  // ================================================================================
+  public static <T> T expectNull(final String name, final T value) {
+    if (value != null) {
+      throw new VerifyArgInvalidArgumentException(name, LOCALIZED_MUST_BE_NULL);
+    }
+    return value;
   }
 
   // ================================================================================
@@ -662,7 +673,19 @@ public class Verify {
     }
   }
 
+  // ================================================================================
+  //  Data Verification helpers
+  // ================================================================================
   public interface DataVerification {
     void verifyData() throws IllegalArgumentException;
+  }
+
+  public static <T extends DataVerification> T[] verifyData(final T[] data) {
+    if (data != null) {
+      for (int i = 0; i < data.length; ++i) {
+        data[i].verifyData();
+      }
+    }
+    return data;
   }
 }
