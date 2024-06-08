@@ -213,9 +213,20 @@ public abstract class AbstractUriMappingProcessor<T> extends AbstractProcessor {
   }
 
   protected static boolean isByteTypeArray(final TypeMirror typeMirror) {
-    if (typeMirror.getKind() == TypeKind.ARRAY) {
-      final ArrayType arrayType = (ArrayType) typeMirror;
+    if (typeMirror instanceof final ArrayType arrayType) {
       return arrayType.getComponentType().getKind() == TypeKind.BYTE;
+    }
+    return false;
+  }
+
+  protected static boolean isArray(final TypeMirror typeMirror) {
+    return typeMirror.getKind() == TypeKind.ARRAY;
+  }
+
+  protected boolean isArray(final TypeMirror typeMirror, final Class<?> componentType) {
+    if (typeMirror instanceof final ArrayType arrayType) {
+      log("ARRAY " + arrayType);
+      return isTypeAssignable(arrayType.getComponentType(), componentType);
     }
     return false;
   }
@@ -260,6 +271,25 @@ public abstract class AbstractUriMappingProcessor<T> extends AbstractProcessor {
 
   protected boolean isMapType(final DeclaredType declaredType) {
     return isSubType(declaredType, Map.class);
+  }
+
+  protected boolean isCollectionType(final DeclaredType declaredType) {
+    return isSubType(declaredType, Collection.class);
+  }
+
+  protected boolean isCollectionType(final DeclaredType declaredType, final Class<?> componentType) {
+    if (isCollectionType(declaredType)) {
+      final TypeMirror collectionComponentType = declaredType.getTypeArguments().getFirst();
+      return isCollectionType(collectionComponentType, componentType);
+    }
+    return false;
+  }
+
+  protected boolean isCollectionType(final TypeMirror type, final Class<?> componentType) {
+    if (type instanceof final DeclaredType declaredType) {
+      return isCollectionType(declaredType, componentType);
+    }
+    return false;
   }
 
   // ====================================================================================================

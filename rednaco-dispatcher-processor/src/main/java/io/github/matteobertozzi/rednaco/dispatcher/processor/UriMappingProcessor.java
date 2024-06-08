@@ -163,6 +163,7 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMessage;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMethod;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.session.AuthSession;");
+        out.addLine("import io.github.matteobertozzi.rednaco.util.Verify;");
         out.addLine();
         out.add("public class ").add(resolverClassName).addLine(" implements RoutesMapping {");
         out.addLine("  private final DispatcherProviders dispatcher;");
@@ -340,6 +341,8 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
         final VariableElement p = method.param(i);
         if (isTypeAssignable(p.asType(), DataVerification.class)) {
           code.indent().add("p_").add(p.getSimpleName().toString()).add(".verifyData();").addLine();
+        } else if (isArray(p.asType(), DataVerification.class)) {
+          code.indent().add("Verify.verifyData(p_").add(p.getSimpleName().toString()).add(");").addLine();
         }
       }
 

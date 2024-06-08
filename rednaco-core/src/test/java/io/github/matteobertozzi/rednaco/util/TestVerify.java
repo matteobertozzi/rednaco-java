@@ -19,6 +19,7 @@ package io.github.matteobertozzi.rednaco.util;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,15 @@ public class TestVerify {
   public void testExpect() {
     Verify.expect("test", true);
     assertInvalidArgument(() -> Verify.expect("test", false));
+  }
+
+  // ================================================================================
+  //  Verify Null
+  // ================================================================================
+  @Test
+  public void testExpectNull() {
+    assertNull(Verify.expectNull("test", null));
+    assertInvalidArgument(() -> Verify.expectNull("test", "INVALID_NON_NULL"));
   }
 
   // ================================================================================
