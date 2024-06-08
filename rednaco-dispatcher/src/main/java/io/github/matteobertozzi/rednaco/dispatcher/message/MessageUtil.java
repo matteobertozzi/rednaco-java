@@ -47,6 +47,7 @@ public final class MessageUtil {
   public static final String METADATA_ACCEPT = "accept";
   public static final String METADATA_CONTENT_TYPE = "content-type";
   public static final String METADATA_CONTENT_LENGTH = "content-length";
+  public static final String METADATA_CONTENT_ENCODING = "content-encoding";
 
   public static final String CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded";
   public static final String CONTENT_TYPE_TEXT_PLAIN = "text/plain";
@@ -244,6 +245,18 @@ public final class MessageUtil {
     final MessageMetadataMap metadata = new MessageMetadataMap();
     if (contentType != null) metadata.add(METADATA_CONTENT_TYPE, contentType);
     metadata.add(METADATA_CONTENT_LENGTH, length);
+    return new MessageFile(metadata, path, rangeOffset, rangeLength, length);
+  }
+
+  public static MessageFile newGzEncodedFile(final Path path, final String contentType) throws IOException {
+    final long length = Files.size(path);
+    return newGzEncodedFile(path, contentType, 0, length, length);
+  }
+
+  public static MessageFile newGzEncodedFile(final Path path, final String contentType, final long rangeOffset, final long rangeLength, final long length) {
+    final MessageMetadataMap metadata = new MessageMetadataMap();
+    if (contentType != null) metadata.set(METADATA_CONTENT_TYPE, contentType);
+    metadata.set(METADATA_CONTENT_ENCODING, "gzip");
     return new MessageFile(metadata, path, rangeOffset, rangeLength, length);
   }
 
