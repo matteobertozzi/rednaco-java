@@ -46,6 +46,7 @@ import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.message.HeaderValue;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.message.MetaParam;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.message.QueryParam;
+import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.AllowBasicAuth;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.AllowPublicAccess;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.RequirePermission;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.TokenSession;
@@ -163,6 +164,7 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMessage;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMethod;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.session.AuthSession;");
+        out.addLine("import io.github.matteobertozzi.rednaco.strings.StringUtil;");
         out.addLine("import io.github.matteobertozzi.rednaco.util.Verify;");
         out.addLine();
         out.add("public class ").add(resolverClassName).addLine(" implements RoutesMapping {");
@@ -276,6 +278,7 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
     // Verify Permission annotations
     final RequirePermission requirePermission = method.removeAnnotation(RequirePermission.class);
     final AllowPublicAccess allowPublicAccess = method.removeAnnotation(AllowPublicAccess.class);
+    final AllowBasicAuth allowBasicAuth = method.removeAnnotation(AllowBasicAuth.class);
     verifyPermissionConsistency(classBuilder.fullName, method.name(), uri, requirePermission, allowPublicAccess);
 
     //log("processing {class} {method}", classElement.getQualifiedName(), methodElement.getSimpleName());
@@ -302,6 +305,13 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
     code.indent().add("private Message ").add(execMethodName).add("(final MessageContext ctx, final Message inMsg) throws Exception ").openBlock();
 
     if (requirePermission != null || method.hasParams()) {
+      if (allowBasicAuth != null) {
+        code.indent().add("// Basic Auth").addLine();
+        code.indent().add("if (StringUtil.isEmpty(inMsg.metadataValue(MessageUtil.METADATA_AUTHORIZATION))) ").openBlock();
+          code.indent().add("return MessageUtil.newBasicAuthRequired(\"").add(allowBasicAuth.realm()).add("\");").addLine();
+        code.closeBlock();
+      }
+
       // Extract Session Param
       code.indent().add("// Session and Permissions").addLine();
       final int sessionParamIndex = method.findSessionParam();

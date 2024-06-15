@@ -17,6 +17,7 @@
 
 package io.github.matteobertozzi.rednaco.dispatcher.message;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.zip.GZIPInputStream;
 
 import io.github.matteobertozzi.rednaco.bytes.BytesUtil;
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
@@ -37,6 +39,7 @@ import io.github.matteobertozzi.rednaco.data.JsonFormat;
 import io.github.matteobertozzi.rednaco.data.XmlFormat;
 import io.github.matteobertozzi.rednaco.data.YajbeFormat;
 import io.github.matteobertozzi.rednaco.data.YamlFormat;
+import io.github.matteobertozzi.rednaco.io.RuntimeIOException;
 import io.github.matteobertozzi.rednaco.strings.StringUtil;
 
 public final class MessageUtil {
@@ -154,6 +157,16 @@ public final class MessageUtil {
   public static <T> T convertOutputContent(final Message message, final Class<T> classOfT) {
     final DataFormat dataFormat = parseAcceptFormat(message.metadata());
     return message.convertContent(dataFormat, classOfT);
+  }
+
+  // ====================================================================================================
+  //  Auth helpers
+  // ====================================================================================================
+  public static Message newBasicAuthRequired(final String realm) {
+    final MessageMetadataMap metadata = new MessageMetadataMap();
+    metadata.set(MessageUtil.METADATA_FOR_HTTP_STATUS, 401);
+    metadata.set("WWW-Authenticate",  "Basic realm=\"" + realm + "\"");
+    return new EmptyMessage(metadata);
   }
 
   // ====================================================================================================
@@ -293,7 +306,20 @@ public final class MessageUtil {
 
     @Override
     public <T> T convertContent(final DataFormat format, final Class<T> classOfT) {
-      return format.fromBytes(content, classOfT);
+      return switch (metadata().getString(METADATA_CONTENT_ENCODING, null)) {
+        case "gzip" -> convertGzContent(format, classOfT);
+        default -> format.fromBytes(content, classOfT);
+      };
+    }
+
+    private <T> T convertGzContent(final DataFormat format, final Class<T> classOfT) {
+      try (ByteArrayInputStream stream = new ByteArrayInputStream(content())) {
+        try (GZIPInputStream gz = new GZIPInputStream(stream)) {
+          return format.fromStream(gz, classOfT);
+        }
+      } catch (final IOException e) {
+        throw new RuntimeIOException(e);
+      }
     }
 
     @Override

@@ -17,6 +17,7 @@
 
 package io.github.matteobertozzi.rednaco.dispatcher;
 
+import java.io.FileNotFoundException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -84,6 +85,9 @@ class DispatcherExecutor {
     } catch (final IllegalArgumentException e) {
       Logger.error("illegal argument {} {}: {}", message.method(), message.path(), e.getMessage());
       return MessageUtil.newErrorMessage(MessageError.newBadRequestError(e.getMessage()));
+    } catch (final FileNotFoundException e) {
+      Logger.error("file not found {} {}: {}", message.method(), message.path(), e.getMessage());
+      return MessageUtil.newErrorMessage(MessageError.notFound());
     } catch (final Throwable e) {
       Logger.error(e, "execution failed {} {}", message.method(), message.path());
       return MessageUtil.newErrorMessage(MessageError.internalServerError());
