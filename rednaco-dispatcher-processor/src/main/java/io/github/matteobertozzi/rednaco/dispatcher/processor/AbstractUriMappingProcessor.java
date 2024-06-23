@@ -29,6 +29,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
@@ -217,6 +218,13 @@ public abstract class AbstractUriMappingProcessor<T> extends AbstractProcessor {
       return arrayType.getComponentType().getKind() == TypeKind.BYTE;
     }
     return false;
+  }
+
+  protected boolean isEnum(final TypeMirror typeMirror) {
+    if (typeMirror.getKind() != TypeKind.DECLARED) return false;
+
+    final Element element = this.processingEnv.getTypeUtils().asElement(typeMirror);
+    return element != null && element.getKind() == ElementKind.ENUM;
   }
 
   protected static boolean isArray(final TypeMirror typeMirror) {

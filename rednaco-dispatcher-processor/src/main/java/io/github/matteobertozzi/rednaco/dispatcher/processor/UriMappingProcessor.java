@@ -430,7 +430,7 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
     code.addLine();
   }
 
-  private static void processPatternVariable(final CodeBuilder code, final TypeMirror paramType, final String fetchPathVariable) {
+  private void processPatternVariable(final CodeBuilder code, final TypeMirror paramType, final String fetchPathVariable) {
     switch (paramType.getKind()) {
       case BOOLEAN -> code.add("Boolean.parseBoolean(").add(fetchPathVariable).add(");");
       case SHORT -> code.add("Short.parseShort(").add(fetchPathVariable).add(");");
@@ -439,6 +439,10 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
       case FLOAT -> code.add("Float.parseFloat(").add(fetchPathVariable).add(");");
       case DOUBLE -> code.add("Double.parseDouble(").add(fetchPathVariable).add(");");
       case DECLARED -> {
+        if (isEnum(paramType)) {
+          code.add(paramType).add(".valueOf(").add(fetchPathVariable).add(");");
+          return;
+        }
         switch (paramType.toString()) {
           case "java.lang.String" -> code.add(fetchPathVariable).add(";");
           default -> throw new UnsupportedOperationException("unsupported @UriVariable type " + paramType.getKind() + " " + paramType);
@@ -448,7 +452,7 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
     }
   }
 
-  private static void processMetadataParam(final CodeBuilder code, final String metaParamName, final VariableElement param, final TypeMirror paramType, final String paramName, final String defaultValue) {
+  private void processMetadataParam(final CodeBuilder code, final String metaParamName, final VariableElement param, final TypeMirror paramType, final String paramName, final String defaultValue) {
     switch (paramType.getKind()) {
       case BOOLEAN -> code.add(metaParamName).add(".getBoolean(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "false" : defaultValue).add(");");
       case SHORT -> code.add(metaParamName).add(".getShort(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "0" : defaultValue).add(");");
@@ -457,6 +461,11 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
       case FLOAT -> code.add(metaParamName).add(".getFloat(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "0" : defaultValue).add(");");
       case DOUBLE -> code.add(metaParamName).add(".getDouble(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "0" : defaultValue).add(");");
       case DECLARED -> {
+        if (isEnum(paramType)) {
+          code.add(metaParamName).add(".getEnumValue(").add(paramType).add(".class, \"").add(paramName).add("\", null);");
+          return;
+        }
+
         switch (paramType.toString()) {
           case "java.lang.String" -> code.add(metaParamName).add(".getString(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "null" : '"' + defaultValue + '"').add(");");
           case "java.util.List<java.lang.String>" -> code.add(metaParamName).add(".getList(\"").add(paramName).add("\");");
