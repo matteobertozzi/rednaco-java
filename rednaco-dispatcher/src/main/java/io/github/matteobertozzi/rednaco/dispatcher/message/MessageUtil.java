@@ -306,7 +306,7 @@ public final class MessageUtil {
 
     @Override
     public <T> T convertContent(final DataFormat format, final Class<T> classOfT) {
-      return switch (metadata().getString(METADATA_CONTENT_ENCODING, null)) {
+      return switch (metadata().getString(METADATA_CONTENT_ENCODING, "")) {
         case "gzip" -> convertGzContent(format, classOfT);
         default -> format.fromBytes(content, classOfT);
       };
