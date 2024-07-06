@@ -39,11 +39,11 @@ public final class CborFormat extends DataFormat {
   }
 
   @Override
-  protected DataFormatMapper get() {
+  protected DataFormatMapperJackson get() {
     return mapper;
   }
 
-  private static final class CborFormatMapper extends DataFormatMapper {
+  private static final class CborFormatMapper extends DataFormatMapperJackson {
     private CborFormatMapper() {
       super(new CBORMapper());
     }

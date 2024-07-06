@@ -17,35 +17,22 @@
 
 package io.github.matteobertozzi.rednaco.data;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import java.io.Serial;
 
-public final class JsonFormat extends DataFormat {
-  public static final JsonFormat INSTANCE = new JsonFormat();
+public class DataFormatException extends RuntimeException {
+  @Serial
+  private static final long serialVersionUID = -2079742671114280731L;
 
-  private final JsonFormatMapper mapper = new JsonFormatMapper();
-
-  private JsonFormat() {
-    // no-op
+  public DataFormatException(final String msg) {
+    super(msg);
   }
 
-  @Override
-  public String name() {
-    return "JSON";
+  public DataFormatException(final String msg, final Throwable cause) {
+    super(msg, cause);
   }
 
-  @Override
-  public String contentType() {
-    return "application/json";
-  }
-
-  @Override
-  protected DataFormatMapperJackson get() {
-    return mapper;
-  }
-
-  private static final class JsonFormatMapper extends DataFormatMapperJackson {
-    private JsonFormatMapper() {
-      super(new JsonMapper());
-    }
+  public DataFormatException(final Throwable cause) {
+    super(cause);
   }
 }
+

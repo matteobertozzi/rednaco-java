@@ -39,11 +39,11 @@ public class YamlFormat extends DataFormat {
   }
 
   @Override
-  protected DataFormatMapper get() {
+  protected DataFormatMapperJackson get() {
     return mapper;
   }
 
-  private static final class YamlFormatMapper extends DataFormatMapper {
+  private static final class YamlFormatMapper extends DataFormatMapperJackson {
     private YamlFormatMapper() {
       super(new YAMLMapper());
     }

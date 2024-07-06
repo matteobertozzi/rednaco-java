@@ -22,14 +22,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serial;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.matteobertozzi.rednaco.bytes.ByteArrayAppender;
 import io.github.matteobertozzi.rednaco.bytes.ByteArrayReader;
@@ -51,26 +49,26 @@ public abstract class DataFormat {
 
   protected abstract DataFormatMapper get();
 
-  protected ObjectMapper getObjectMapper() {
-    return get().getObjectMapper();
-  }
-
   // ===============================================================================================
   //  JsonNode conversions
   // ===============================================================================================
   public JsonNode toTreeNode(final Object value) {
-    return getObjectMapper().valueToTree(value);
+    return get().toTreeNode(value);
   }
 
   public <T> T fromTreeNode(final JsonNode node, final Class<T> valueType) throws JsonProcessingException, IllegalArgumentException {
-    return getObjectMapper().treeToValue(node, valueType);
+    return get().fromTreeNode(node, valueType);
   }
 
   // ===============================================================================================
   //  Object to Object conversions
   // ===============================================================================================
   public <T> T convert(final Object value, final Class<T> valueType) {
-    return getObjectMapper().convertValue(value, valueType);
+    return get().convert(value, valueType);
+  }
+
+  public <T> T convert(final Object value, final TypeReference<T> valueType) {
+    return get().convert(value, valueType);
   }
 
   // ===============================================================================================
@@ -101,41 +99,35 @@ public abstract class DataFormat {
   }
 
   public <T> T fromStream(final InputStream stream, final Class<T> valueType) throws IOException {
-    return getObjectMapper().readValue(stream, valueType);
+    return get().fromStream(stream, valueType);
   }
 
   public <T> T fromStream(final InputStream stream, final TypeReference<T> valueType) throws IOException {
-    return getObjectMapper().readValue(stream, valueType);
+    return get().fromStream(stream, valueType);
   }
 
   public <T> T fromStream(final InputStream stream, final int length, final Class<T> valueType) throws IOException {
     try (LimitedInputStream limitedStream = new LimitedInputStream(stream, length, false)) {
-      return getObjectMapper().readValue(limitedStream, valueType);
+      return get().fromStream(limitedStream, valueType);
     }
   }
 
   public <T> T fromStream(final InputStream stream, final int length, final TypeReference<T> valueType) throws IOException {
     try (LimitedInputStream limitedStream = new LimitedInputStream(stream, length, false)) {
-      return getObjectMapper().readValue(limitedStream, valueType);
+      return get().fromStream(limitedStream, valueType);
     }
   }
 
   public <T> T fromBytes(final byte[] data, final Class<T> valueType) {
-    if (BytesUtil.isEmpty(data)) return null;
-    try {
-      return getObjectMapper().readValue(data, valueType);
-    } catch (final Exception e) {
-      throw new DataFormatException(e);
-    }
+    return BytesUtil.isEmpty(data) ? null : get().fromBytes(data, valueType);
+  }
+
+  public <T> T fromBytes(final byte[] data, final TypeReference<T> valueType) {
+    return BytesUtil.isEmpty(data) ? null : get().fromBytes(data, valueType);
   }
 
   public <T> T fromBytes(final byte[] data, final int off, final int len, final Class<T> valueType) {
-    if (len == 0) return null;
-    try {
-      return getObjectMapper().readValue(data, off, len, valueType);
-    } catch (final Exception e) {
-      throw new DataFormatException(e);
-    }
+    return (len == 0) ? null : get().fromBytes(data, off, len, valueType);
   }
 
   public <T> T fromBytes(final ByteArraySlice data, final Class<T> valueType) {
@@ -148,37 +140,27 @@ public abstract class DataFormat {
   }
 
   public <T> T fromString(final String data, final Class<T> valueType) {
-    if (StringUtil.isEmpty(data)) return null;
-    try {
-      return getObjectMapper().readValue(data, valueType);
-    } catch (final JsonProcessingException e) {
-      throw new DataFormatException(e);
-    }
+    return StringUtil.isEmpty(data) ? null : get().fromString(data, valueType);
   }
 
   public <T> T fromString(final String data, final TypeReference<T> valueType) {
-    if (StringUtil.isEmpty(data)) return null;
-    try {
-      return getObjectMapper().readValue(data, valueType);
-    } catch (final JsonProcessingException e) {
-      throw new DataFormatException(e);
-    }
+    return StringUtil.isEmpty(data) ? null : get().fromString(data, valueType);
   }
 
   // ===============================================================================================
   //  To file/stream/byte[]/string/... conversions
   // ===============================================================================================
   public void addToStream(final OutputStream stream, final Object obj) throws IOException {
-    getObjectMapper().writeValue(stream, obj);
+    get().addToStream(stream, obj);
   }
 
   public void addToPrettyPrintStream(final OutputStream stream, final Object obj) throws IOException {
-    getObjectMapper().writerWithDefaultPrettyPrinter().writeValue(stream, obj);
+    get().addToPrettyPrintStream(stream, obj);
   }
 
   public void addToByteArray(final ByteArrayAppender buffer, final Object obj) {
     try (BytesAppenderOutputStream stream = new BytesAppenderOutputStream(buffer)) {
-      getObjectMapper().writeValue(stream, obj);
+      addToStream(stream, obj);
       stream.flush();
     } catch (final IOException e) {
       throw new RuntimeException(e);
@@ -187,7 +169,7 @@ public abstract class DataFormat {
 
   public void addToByteArray(final PagedByteArray buffer, final Object obj) {
     try (PagedByteArrayWriter writer = new PagedByteArrayWriter(buffer)) {
-      getObjectMapper().writeValue(writer, obj);
+      addToStream(writer, obj);
       writer.flush();
     } catch (final IOException e) {
       throw new RuntimeException(e);
@@ -195,43 +177,14 @@ public abstract class DataFormat {
   }
 
   public String asPrettyPrintString(final Object value) {
-    try {
-      return getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(value);
-    } catch (final Exception e) {
-      throw new DataFormatException(e);
-    }
+    return get().asPrettyPrintString(value);
   }
 
   public String asString(final Object value) {
-    try {
-      return getObjectMapper().writeValueAsString(value);
-    } catch (final Exception e) {
-      throw new DataFormatException(e);
-    }
+    return get().asString(value);
   }
 
   public byte[] asBytes(final Object value) {
-    try {
-      return getObjectMapper().writeValueAsBytes(value);
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static final class DataFormatException extends RuntimeException {
-	  @Serial
-    private static final long serialVersionUID = -2079742671114280731L;
-
-    public DataFormatException(final String msg) {
-      super(msg);
-    }
-
-    public DataFormatException(final String msg, final Throwable cause) {
-      super(msg, cause);
-    }
-
-    public DataFormatException(final Throwable cause) {
-      super(cause);
-    }
+    return get().asBytes(value);
   }
 }

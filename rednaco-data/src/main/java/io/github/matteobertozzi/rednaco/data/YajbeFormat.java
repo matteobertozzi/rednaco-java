@@ -39,11 +39,11 @@ public class YajbeFormat extends DataFormat {
   }
 
   @Override
-  protected DataFormatMapper get() {
+  protected DataFormatMapperJackson get() {
     return mapper;
   }
 
-  private static final class YajbeFormatMapper extends DataFormatMapper {
+  private static final class YajbeFormatMapper extends DataFormatMapperJackson {
     private YajbeFormatMapper() {
       super(new YajbeMapper());
     }

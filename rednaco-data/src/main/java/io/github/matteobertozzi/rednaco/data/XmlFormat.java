@@ -39,11 +39,11 @@ public final class XmlFormat extends DataFormat {
   }
 
   @Override
-  protected DataFormatMapper get() {
+  protected DataFormatMapperJackson get() {
     return mapper;
   }
 
-  private static final class XmlFormatMapper extends DataFormatMapper {
+  private static final class XmlFormatMapper extends DataFormatMapperJackson {
     private XmlFormatMapper() {
       super(new XmlMapper());
     }

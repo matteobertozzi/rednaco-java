@@ -17,8 +17,10 @@
 
 package io.github.matteobertozzi.rednaco.collections.maps;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -109,6 +111,17 @@ public final class MapUtil {
     final HashMap<OK, OV> map = HashMap.newHashMap(input.size());
     for (final Map.Entry<IK, IV> entry: input.entrySet()) {
       map.put(keyMapper.apply(entry.getKey(), entry.getValue()), valueMapper.apply(entry.getValue()));
+    }
+    return map;
+  }
+
+  // ================================================================================
+  //  New Multi Map related
+  // ================================================================================
+  public static <K, V> Map<K, List<V>> newMultiHashMapFrom(final Collection<V> values, final Function<V, K> keyMapper) {
+    final HashMap<K, List<V>> map = HashMap.newHashMap(values.size());
+    for (final V entry: values) {
+      map.computeIfAbsent(keyMapper.apply(entry), k -> new ArrayList<>()).add(entry);
     }
     return map;
   }

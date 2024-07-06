@@ -35,6 +35,7 @@ import io.github.matteobertozzi.rednaco.bytes.BytesUtil;
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
 import io.github.matteobertozzi.rednaco.data.CborFormat;
 import io.github.matteobertozzi.rednaco.data.DataFormat;
+import io.github.matteobertozzi.rednaco.data.FormUrlEncodedFormat;
 import io.github.matteobertozzi.rednaco.data.JsonFormat;
 import io.github.matteobertozzi.rednaco.data.XmlFormat;
 import io.github.matteobertozzi.rednaco.data.YajbeFormat;
@@ -145,6 +146,7 @@ public final class MessageUtil {
       case CONTENT_TYPE_APP_YAJBE -> YajbeFormat.INSTANCE;
       case CONTENT_TYPE_APP_YAML -> YamlFormat.INSTANCE;
       case CONTENT_TYPE_APP_XML, CONTENT_TYPE_TEXT_XML -> XmlFormat.INSTANCE;
+      case CONTENT_TYPE_FORM_URLENCODED -> FormUrlEncodedFormat.INSTANCE;
       default -> null;
     };
   }
