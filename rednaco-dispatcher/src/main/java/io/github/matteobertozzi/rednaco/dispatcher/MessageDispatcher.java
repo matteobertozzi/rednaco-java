@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 
+import io.github.matteobertozzi.easerinsights.logging.Logger;
 import io.github.matteobertozzi.rednaco.dispatcher.message.Message;
 import io.github.matteobertozzi.rednaco.dispatcher.message.MessageError;
 import io.github.matteobertozzi.rednaco.dispatcher.message.MessageException;
@@ -52,23 +53,30 @@ public class MessageDispatcher {
 
   public Message execute(final DispatcherContext ctx, final UriMessage message) {
     ctx.stats().setQueuePushNs(System.nanoTime());
-    MessageRecorder.record(message);
-    final RouteMatcher mapping = router.get(message.method(), RoutePathUtil.cleanPath(message.path()));
-    Message response;
-    if (mapping != null) {
-      ctx.setMatcher(mapping.matcher());
-      response = switch (mapping.executionType()) {
-        case INLINE_FAST -> inlineExecutor.execTask(ctx, mapping, message);
-        case ASYNC, IO_SLOW -> asyncExecutors.submit(ctx, mapping, message);
-        default -> executors.submit(ctx, mapping, message);
-      };
-    } else {
-      response = MessageUtil.newErrorMessage(MessageError.notFound());
-    }
-    if (response != null) {
+    try {
+      MessageRecorder.record(message);
+      final RouteMatcher mapping = router.get(message.method(), RoutePathUtil.cleanPath(message.path()));
+      Message response;
+      if (mapping != null) {
+        ctx.setMatcher(mapping.matcher());
+        response = switch (mapping.executionType()) {
+          case INLINE_FAST -> inlineExecutor.execTask(ctx, mapping, message);
+          case ASYNC, IO_SLOW -> asyncExecutors.submit(ctx, mapping, message);
+          default -> executors.submit(ctx, mapping, message);
+        };
+      } else {
+        response = MessageUtil.newErrorMessage(MessageError.notFound());
+      }
+      if (response != null) {
+        MessageRecorder.record(message, response, ctx.stats());
+      }
+      return response;
+    } catch (final Throwable e) {
+      Logger.error(e, "unable to execute message");
+      final Message response = MessageUtil.newErrorMessage(MessageError.internalServerError());
       MessageRecorder.record(message, response, ctx.stats());
+      return response;
     }
-    return response;
   }
 
   public DispatcherProviders providers() {
