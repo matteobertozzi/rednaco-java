@@ -76,6 +76,7 @@ public final class ServicePluginRegistry {
     }
 
     addPlugin(plugin);
+    Logger.debug("service plugin {} loaded: {}", plugin.serviceName(), buildInfo);
     return true;
   }
 
