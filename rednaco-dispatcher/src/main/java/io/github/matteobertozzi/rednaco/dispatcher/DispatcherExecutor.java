@@ -80,8 +80,13 @@ class DispatcherExecutor {
     try {
       return mapping.executor().execute(ctx, message);
     } catch (final MessageException e) {
-      Logger.error("execution failed {} {}: {}", message.method(), message.path(), e.getMessageError());
-      return MessageUtil.newErrorMessage(e.getMessageError());
+      final MessageError error = e.getMessageError();
+      if (error.statusCode() >= 200 && error.statusCode() <= 399) {
+        Logger.error("execution terminated with {status} {} {}: {}", error.status(), message.method(), message.path(), error);
+      } else {
+        Logger.error("execution failed {} {}: {}", message.method(), message.path(), error);
+      }
+      return MessageUtil.newErrorMessage(error);
     } catch (final IllegalArgumentException e) {
       Logger.error("illegal argument {} {}: {}", message.method(), message.path(), e.getMessage());
       return MessageUtil.newErrorMessage(MessageError.newBadRequestError(e.getMessage()));
