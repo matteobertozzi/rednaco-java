@@ -228,14 +228,13 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
       if (isComponentPrimitive) {
         TemplateUtil.appendTemplate(code, """
           public void set${capitalizedComponentName}(final ${componentType} value) {
-            if (hasOriginal) {
-              if (this.${componentName}Original == value) {
-                this.${changesBitmap} &= ${bitmapFieldReset}L;
-              } else {
-                this.${changesBitmap} |= ${bitmapFieldSet}L;
-              }
+            if (hasOriginal && this.${componentName}Original == value) {
+              this.${changesBitmap} &= ${bitmapFieldReset}L;
+              this.${componentName} = value;
+              return;
             }
             this.${componentName} = value;
+            this.${changesBitmap} |= ${bitmapFieldSet}L;
           }
 
         """, componentVars);
