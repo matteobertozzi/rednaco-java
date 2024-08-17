@@ -157,4 +157,19 @@ public class IndexedHashSet<T> extends AbstractSet<T> {
       }
     }
   }
+
+  public static <T> IndexedHashSet<T> empty() {
+    return new EmptyIndexedHashSet<>();
+  }
+
+  private static final class EmptyIndexedHashSet<T> extends IndexedHashSet<T> {
+    @Override
+    public boolean add(final T key) {
+      throw new UnsupportedOperationException();
+    }
+
+    public int addKey(final T key) {
+      throw new UnsupportedOperationException();
+    }
+  }
 }
