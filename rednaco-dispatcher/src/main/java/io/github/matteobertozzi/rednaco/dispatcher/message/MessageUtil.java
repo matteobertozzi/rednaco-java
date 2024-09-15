@@ -26,6 +26,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
+import java.util.Locale.LanguageRange;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -33,6 +35,7 @@ import java.util.zip.GZIPInputStream;
 
 import io.github.matteobertozzi.rednaco.bytes.BytesUtil;
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
+import io.github.matteobertozzi.rednaco.collections.lists.ListUtil;
 import io.github.matteobertozzi.rednaco.data.CborFormat;
 import io.github.matteobertozzi.rednaco.data.DataFormat;
 import io.github.matteobertozzi.rednaco.data.FormUrlEncodedFormat;
@@ -49,6 +52,7 @@ public final class MessageUtil {
   public static final String METADATA_FOR_HTTP_STATUS = ":status";
   public static final String METADATA_AUTHORIZATION = "authorization";
   public static final String METADATA_ACCEPT = "accept";
+  public static final String METADATA_ACCEPT_LANGUAGE = "accept-language";
   public static final String METADATA_CONTENT_TYPE = "content-type";
   public static final String METADATA_CONTENT_LENGTH = "content-length";
   public static final String METADATA_CONTENT_ENCODING = "content-encoding";
@@ -159,6 +163,43 @@ public final class MessageUtil {
   public static <T> T convertOutputContent(final Message message, final Class<T> classOfT) {
     final DataFormat dataFormat = parseAcceptFormat(message.metadata());
     return message.convertContent(dataFormat, classOfT);
+  }
+
+  // ====================================================================================================
+  //  Lang Helpers
+  // ====================================================================================================
+  public static <T> T parseAcceptLanguage(final String langRanges, final T defaultLang, final Function<String, T> parseLang) {
+    if (StringUtil.isEmpty(langRanges)) {
+      return defaultLang;
+    }
+
+    final List<LanguageRange> langs = Locale.LanguageRange.parse(langRanges);
+    if (ListUtil.isEmpty(langs)) {
+      return defaultLang;
+    }
+
+    // try to direct-match ranges (e.g. en-US, en)
+    for (final LanguageRange range: langs) {
+      final String langId = range.getRange().toLowerCase();
+      final T value = parseLang.apply(langId);
+      if (value != null) {
+        return value;
+      }
+    }
+
+    // try to parse locale (e.g. en-US -> en)
+    for (final LanguageRange range: langs) {
+      final Locale locale = Locale.forLanguageTag(range.getRange());
+      if (locale == null || StringUtil.isEmpty(locale.getLanguage())) continue;
+
+      final String langId = StringUtil.toLower(locale.getLanguage());
+      final T value = parseLang.apply(langId);
+      if (value != null) {
+        return value;
+      }
+    }
+
+    return defaultLang;
   }
 
   // ====================================================================================================
