@@ -30,6 +30,11 @@ public final class MapUtil {
     // no-op
   }
 
+  public static <K, V> K extractRandKey(final Map<K, V> input) {
+    if (input == null || input.isEmpty()) return null;
+    return input.keySet().iterator().next();
+  }
+
   // ================================================================================
   //  Length related
   // ================================================================================

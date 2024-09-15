@@ -33,7 +33,7 @@ public class StripedLock<T> {
   public StripedLock(final int stripes, final Supplier<T> supplier) {
     this.cells = new Cell[BitUtil.nextPow2(stripes)];
     for (int i = 0; i < cells.length; ++i) {
-      this.cells[i] = new Cell<T>(i, supplier.get());
+      this.cells[i] = new Cell<>(i, supplier.get());
     }
   }
 

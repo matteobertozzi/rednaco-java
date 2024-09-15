@@ -290,7 +290,7 @@ public final class StringUtil {
     final StringBuilder builder = new StringBuilder(size);
     for (int i = 0; i < count; ++i) {
       if (items[offset + i] != null) {
-        if (builder.length() > 0) builder.append(delimiter);
+        if (!builder.isEmpty()) builder.append(delimiter);
         builder.append(items[offset + i]);
       }
     }
@@ -311,7 +311,7 @@ public final class StringUtil {
       if (item == null) continue;
 
       if (index++ != 0) builder.append(delimiter);
-      builder.append(item.toString());
+      builder.append(item);
     }
     if (preAndPostDelimiter) builder.append(delimiter);
     return builder.toString();

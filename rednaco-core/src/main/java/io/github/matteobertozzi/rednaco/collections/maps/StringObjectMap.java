@@ -118,74 +118,68 @@ public final class StringObjectMap extends HashMap<String, Object> {
 
   public static int getShort(final Map<String, Object> map, final String key, final short defaultValue) {
     final Object oValue = map.get(key);
-    if (oValue == null) return defaultValue;
+    return switch (oValue) {
+      case null -> defaultValue;
+      case final Number value -> value.shortValue();
+      case final String sValue -> StringConverter.toShort(sValue, defaultValue);
+      default -> throw new IllegalArgumentException("expected a int got: " + oValue.getClass() + " " + oValue);
+    };
 
-    if (oValue instanceof final Number value) {
-      return value.shortValue();
-    } else if (oValue instanceof final String sValue) {
-      return StringConverter.toShort(sValue, defaultValue);
-    }
-    throw new IllegalArgumentException("expected a int got: " + oValue.getClass() + " " + oValue);
   }
 
   public static int getInt(final Map<String, Object> map, final String key, final int defaultValue) {
     final Object oValue = map.get(key);
-    if (oValue == null) return defaultValue;
+    return switch (oValue) {
+      case null -> defaultValue;
+      case final Number value -> value.intValue();
+      case final String sValue -> StringConverter.toInt(sValue, defaultValue);
+      default -> throw new IllegalArgumentException("expected a int got: " + oValue.getClass() + " " + oValue);
+    };
 
-    if (oValue instanceof final Number value) {
-      return value.intValue();
-    } else if (oValue instanceof final String sValue) {
-      return StringConverter.toInt(sValue, defaultValue);
-    }
-    throw new IllegalArgumentException("expected a int got: " + oValue.getClass() + " " + oValue);
   }
 
   public static long getLong(final Map<String, Object> map, final String key, final long defaultValue) {
     final Object oValue = map.get(key);
-    if (oValue == null) return defaultValue;
+    return switch (oValue) {
+      case null -> defaultValue;
+      case final Number value -> value.longValue();
+      case final String sValue -> StringConverter.toLong(sValue, defaultValue);
+      default -> throw new IllegalArgumentException("expected a long got: " + oValue.getClass() + " " + oValue);
+    };
 
-    if (oValue instanceof final Number value) {
-      return value.longValue();
-    } else if (oValue instanceof final String sValue) {
-      return StringConverter.toLong(sValue, defaultValue);
-    }
-    throw new IllegalArgumentException("expected a long got: " + oValue.getClass() + " " + oValue);
   }
 
   public static float getFloat(final Map<String, Object> map, final String key, final float defaultValue) {
     final Object oValue = map.get(key);
-    if (oValue == null) return defaultValue;
+    return switch (oValue) {
+      case null -> defaultValue;
+      case final Number value -> value.floatValue();
+      case final String sValue -> StringConverter.toFloat(sValue, defaultValue);
+      default -> throw new IllegalArgumentException("expected a float got: " + oValue.getClass() + " " + oValue);
+    };
 
-    if (oValue instanceof final Number value) {
-      return value.floatValue();
-    } else if (oValue instanceof final String sValue) {
-      return StringConverter.toFloat(sValue, defaultValue);
-    }
-    throw new IllegalArgumentException("expected a float got: " + oValue.getClass() + " " + oValue);
   }
 
   public static double getDouble(final Map<String, Object> map, final String key, final double defaultValue) {
     final Object oValue = map.get(key);
-    if (oValue == null) return defaultValue;
+    return switch (oValue) {
+      case null -> defaultValue;
+      case final Number value -> value.floatValue();
+      case final String sValue -> StringConverter.toDouble(sValue, defaultValue);
+      default -> throw new IllegalArgumentException("expected a double got: " + oValue.getClass() + " " + oValue);
+    };
 
-    if (oValue instanceof final Number value) {
-      return value.floatValue();
-    } else if (oValue instanceof final String sValue) {
-      return StringConverter.toDouble(sValue, defaultValue);
-    }
-    throw new IllegalArgumentException("expected a double got: " + oValue.getClass() + " " + oValue);
   }
 
   public static boolean getBoolean(final Map<String, Object> map, final String key, final boolean defaultValue) {
     final Object oValue = map.get(key);
-    if (oValue == null) return defaultValue;
+    return switch (oValue) {
+      case null -> defaultValue;
+      case final Boolean value -> value;
+      case final String sValue -> StringConverter.toBoolean(sValue, defaultValue);
+      default -> throw new IllegalArgumentException("expected a boolean got: " + oValue.getClass() + " " + oValue);
+    };
 
-    if (oValue instanceof final Boolean value) {
-      return value;
-    } else if (oValue instanceof final String sValue) {
-      return StringConverter.toBoolean(sValue, defaultValue);
-    }
-    throw new IllegalArgumentException("expected a boolean got: " + oValue.getClass() + " " + oValue);
   }
 
   @SuppressWarnings("unchecked")

@@ -101,7 +101,7 @@ public final class MapTestUtil {
         if (itemsBitmap.get(rmIndex)) {
           final K rmKey = map.getKeyAtIndex(rmIndex);
           Assertions.assertEquals(rmIndex, map.removeKey(rmKey));
-          Assertions.assertEquals(rmIndex, refIndexMap.remove(rmKey).intValue());
+          Assertions.assertEquals(rmIndex, refIndexMap.remove(rmKey));
           refValues[rmIndex] = null;
           itemsBitmap.clear(rmIndex);
         }

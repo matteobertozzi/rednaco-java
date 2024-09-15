@@ -44,14 +44,17 @@ public final class StringBuilderUtil {
     }
 
     if (clazz.isArray()) {
-      if (value instanceof final byte[] bArray) return appendArray(builder, bArray);
-      if (value instanceof final int[] iArray) return appendArray(builder, iArray);
-      if (value instanceof final long[] lArray) return appendArray(builder, lArray);
-      if (value instanceof final short[] sArray) return appendArray(builder, sArray);
-      if (value instanceof final float[] fArray) return appendArray(builder, fArray);
-      if (value instanceof final double[] dArray) return appendArray(builder, dArray);
-      if (value instanceof final boolean[] bArray) return appendArray(builder, bArray);
-      if (value instanceof final Object[] oArray) return appendArray(builder, oArray);
+      return switch (value) {
+        case final byte[] bArray -> appendArray(builder, bArray);
+        case final int[] iArray -> appendArray(builder, iArray);
+        case final long[] lArray -> appendArray(builder, lArray);
+        case final short[] sArray -> appendArray(builder, sArray);
+        case final float[] fArray -> appendArray(builder, fArray);
+        case final double[] dArray -> appendArray(builder, dArray);
+        case final boolean[] bArray -> appendArray(builder, bArray);
+        case final Object[] oArray -> appendArray(builder, oArray);
+        default -> builder.append(value);
+      };
     } else if (value instanceof final Map<?, ?> map) {
       return appendMap(builder, map);
     }

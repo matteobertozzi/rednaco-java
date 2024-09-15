@@ -43,6 +43,13 @@ public final class SetUtil {
   }
 
   // ================================================================================
+  //  Contains
+  // ================================================================================
+  public static <K> boolean contains(final Set<K> input, final K key) {
+    return input != null && input.contains(key);
+  }
+
+  // ================================================================================
   //  Instance related
   // ================================================================================
   public static <K> Set<K> emptyIfNull(final Set<K> input) {

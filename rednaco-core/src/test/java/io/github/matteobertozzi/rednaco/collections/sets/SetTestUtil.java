@@ -36,7 +36,7 @@ public final class SetTestUtil {
     while (set.size() < nItems) {
       final K key = keySupplier.get();
       if (set.contains(key)) {
-        Assertions.assertEquals(refMap.get(key).intValue(), set.addKey(key));
+        Assertions.assertEquals(refMap.get(key), set.addKey(key));
       } else {
         final int index = set.size();
         Assertions.assertEquals(index, set.addKey(key));
@@ -44,7 +44,7 @@ public final class SetTestUtil {
       }
 
       for (final Map.Entry<K, Integer> entry: refMap.entrySet()) {
-        Assertions.assertEquals(entry.getValue().intValue(), set.getIndex(entry.getKey()));
+        Assertions.assertEquals(entry.getValue(), set.getIndex(entry.getKey()));
       }
     }
   }
@@ -57,7 +57,7 @@ public final class SetTestUtil {
     for (int k = 0; k < 50_000; ++k) {
       final K key = keySupplier.get();
       if (set.contains(key)) {
-        Assertions.assertEquals(refMap.get(key).intValue(), set.addKey(key));
+        Assertions.assertEquals(refMap.get(key), set.addKey(key));
       } else {
         final int index = set.addKey(key);
         Assertions.assertFalse(itemsBitmap.get(index));
@@ -74,7 +74,7 @@ public final class SetTestUtil {
         if (itemsBitmap.get(rmIndex)) {
           final K rmKey = set.getAtIndex(rmIndex);
           Assertions.assertEquals(rmIndex, set.removeKey(rmKey));
-          Assertions.assertEquals(rmIndex, refMap.remove(rmKey).intValue());
+          Assertions.assertEquals(rmIndex, refMap.remove(rmKey));
           itemsBitmap.clear(rmIndex);
         }
       }
@@ -84,7 +84,7 @@ public final class SetTestUtil {
       }
 
       for (final Map.Entry<K, Integer> entry: refMap.entrySet()) {
-        Assertions.assertEquals(entry.getValue().intValue(), set.getIndex(entry.getKey()));
+        Assertions.assertEquals(entry.getValue(), set.getIndex(entry.getKey()));
       }
     }
   }

@@ -3,21 +3,23 @@ package io.github.matteobertozzi.rednaco.threading;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
+
+import io.github.matteobertozzi.easerinsights.logging.Logger;
+import io.github.matteobertozzi.rednaco.util.function.FailableSupplier;
 
 public abstract class CachedValue<T> {
-  protected final Supplier<T> supplier;
+  protected final FailableSupplier<T> supplier;
   protected final long cacheNs;
 
-  protected CachedValue(final Duration cachePeriod, final Supplier<T> supplier) {
+  protected CachedValue(final Duration cachePeriod, final FailableSupplier<T> supplier) {
     this.supplier = supplier;
     this.cacheNs = cachePeriod.toNanos();
   }
 
   public abstract T get();
-  public abstract void invalidate();
+  public abstract CachedValue<T> invalidate();
 
-  public static <T> CachedValue<T> newConcurrent(final Duration cachePeriod, final Supplier<T> supplier) {
+  public static <T> CachedValue<T> newConcurrent(final Duration cachePeriod, final FailableSupplier<T> supplier) {
     return new AtomicCachedValue<>(cachePeriod, supplier);
   }
 
@@ -25,7 +27,7 @@ public abstract class CachedValue<T> {
     private final AtomicReference<T> cachedValue = new AtomicReference<>(null);
     private final AtomicLong nextRefreshTs = new AtomicLong(0);
 
-    public AtomicCachedValue(final Duration cachePeriod, final Supplier<T> supplier) {
+    public AtomicCachedValue(final Duration cachePeriod, final FailableSupplier<T> supplier) {
       super(cachePeriod, supplier);
     }
 
@@ -41,16 +43,22 @@ public abstract class CachedValue<T> {
       return value;
     }
 
-    public void invalidate() {
+    public CachedValue<T> invalidate() {
       nextRefreshTs.set(0);
       cachedValue.set(null);
+      return this;
     }
 
     private T refreshValue() {
-      final T value = supplier.get();
-      cachedValue.set(value);
-      nextRefreshTs.set(System.nanoTime() + cacheNs);
-      return value;
+      try {
+        final T value = supplier.get();
+        cachedValue.set(value);
+        nextRefreshTs.set(System.nanoTime() + cacheNs);
+        return value;
+      } catch (final Exception e) {
+        Logger.error(e, "unable to refresh cached value");
+        throw new RuntimeException(e);
+      }
     }
   }
 }
