@@ -36,6 +36,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
+import io.github.matteobertozzi.easerinsights.logging.LogUtil;
 import io.github.matteobertozzi.rednaco.strings.StringFormat;
 import io.github.matteobertozzi.rednaco.strings.StringUtil;
 import io.github.matteobertozzi.rednaco.strings.TemplateUtil;
@@ -382,7 +383,7 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
         writer.write(code.toString());
       }
     } catch (final Throwable e) {
-      fatalError("unable to write {} class", className);
+      fatalError(e, "unable to write {} class", className);
     }
   }
 
@@ -407,5 +408,9 @@ public class RecordEditorBuilderProcessor extends AbstractProcessor {
 
   protected void fatalError(final String msg, final Object... args) {
     processingEnv.getMessager().printMessage(Kind.ERROR, "FATAL ERROR: " + StringFormat.namedFormat(msg, args));
+  }
+
+  protected void fatalError(final Throwable exception, final String msg, final Object... args) {
+    processingEnv.getMessager().printMessage(Kind.ERROR, "FATAL ERROR: " + StringFormat.namedFormat(msg, args) + " - " + exception.getMessage() + "\n" + LogUtil.stackTraceToString(exception));
   }
 }

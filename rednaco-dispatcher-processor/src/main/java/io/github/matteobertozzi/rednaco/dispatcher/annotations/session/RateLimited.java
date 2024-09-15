@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.SOURCE)
 public @interface RateLimited {
-  public enum RateLimitOn { IP, SESSION, SESSION_OWNER }
+  enum RateLimitOn { IP, SESSION, SESSION_OWNER }
 
   RateLimitOn on();
   int limit();

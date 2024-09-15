@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
@@ -70,6 +71,10 @@ public interface MessageMetadata {
     return StringConverter.toEnumValue(enumType, key, get(key), defaultValue);
   }
 
+  default UUID getUUID(final String key) {
+    return UUID.fromString(get(key));
+  }
+
   // --------------------------------------------------------------------------------
   // List lookup helpers
   // --------------------------------------------------------------------------------
@@ -84,33 +89,75 @@ public interface MessageMetadata {
   }
 
   default boolean[] getBooleanArray(final String key) {
-    // TODO
-    return null;
+    final List<String> rawItems = getList(key);
+    if (ListUtil.isEmpty(rawItems)) return null;
+
+    final boolean[] items = new boolean[rawItems.size()];
+    int index = 0;
+    for (final String rawItem: rawItems) {
+      items[index++] = StringConverter.toBoolean(rawItem, false);
+    }
+    return items;
   }
 
   default short[] getShortArray(final String key) {
-    // TODO
-    return null;
+    final List<String> rawItems = getList(key);
+    if (ListUtil.isEmpty(rawItems)) return null;
+
+    final short[] items = new short[rawItems.size()];
+    int index = 0;
+    for (final String rawItem: rawItems) {
+      items[index++] = StringConverter.toShort(rawItem, (short)0);
+    }
+    return items;
   }
 
   default int[] getIntArray(final String key) {
-    // TODO
-    return null;
+    final List<String> rawItems = getList(key);
+    if (ListUtil.isEmpty(rawItems)) return null;
+
+    final int[] items = new int[rawItems.size()];
+    int index = 0;
+    for (final String rawItem: rawItems) {
+      items[index++] = StringConverter.toInt(rawItem, 0);
+    }
+    return items;
   }
 
   default long[] getLongArray(final String key) {
-    // TODO
-    return null;
+    final List<String> rawItems = getList(key);
+    if (ListUtil.isEmpty(rawItems)) return null;
+
+    final long[] items = new long[rawItems.size()];
+    int index = 0;
+    for (final String rawItem: rawItems) {
+      items[index++] = StringConverter.toLong(rawItem, 0);
+    }
+    return items;
   }
 
   default float[] getFloatArray(final String key) {
-    // TODO
-    return null;
+    final List<String> rawItems = getList(key);
+    if (ListUtil.isEmpty(rawItems)) return null;
+
+    final float[] items = new float[rawItems.size()];
+    int index = 0;
+    for (final String rawItem: rawItems) {
+      items[index++] = StringConverter.toFloat(rawItem, 0);
+    }
+    return items;
   }
 
   default double[] getDoubleArray(final String key) {
-    // TODO
-    return null;
+    final List<String> rawItems = getList(key);
+    if (ListUtil.isEmpty(rawItems)) return null;
+
+    final double[] items = new double[rawItems.size()];
+    int index = 0;
+    for (final String rawItem: rawItems) {
+      items[index++] = StringConverter.toDouble(rawItem, 0);
+    }
+    return items;
   }
 
   default String[] toStringArray() {

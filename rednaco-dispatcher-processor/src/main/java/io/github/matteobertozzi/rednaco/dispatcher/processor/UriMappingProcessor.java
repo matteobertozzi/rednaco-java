@@ -83,7 +83,7 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
       try {
         builder.writeSource(processingEnv);
       } catch (final Throwable e) {
-        fatalError("unable to generate uri mapper for {}: {}", builder.fullName, e.getMessage());
+        fatalError(e, "unable to generate uri mapper for {}", builder.fullName);
       }
     }
   }
@@ -95,6 +95,7 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
     final ExecutableElement methodElement = (ExecutableElement)element;
     final String fullClassName = classElement.getQualifiedName().toString();
 
+    //log("process class method mapping {} {}", uri, execMethodName);
     final DispatchClassBuilder builder = dispatchBuilder.computeIfAbsent(fullClassName, DispatchClassBuilder::new);
     generateMethodMapping(builder, uri, execMethodName, classElement, methodElement);
     builderConsumer.accept(builder);
@@ -467,6 +468,7 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
         }
 
         switch (paramType.toString()) {
+          case "java.util.UUID" -> code.add(metaParamName).add(".getUUID(\"").add(paramName).add("\");");
           case "java.lang.String" -> code.add(metaParamName).add(".getString(\"").add(paramName).add("\", ").add(StringUtil.isEmpty(defaultValue) ? "null" : '"' + defaultValue + '"').add(");");
           case "java.util.List<java.lang.String>" -> code.add(metaParamName).add(".getList(\"").add(paramName).add("\");");
           case "java.util.Set<java.lang.String>" -> code.add(metaParamName).add(".getStringSet(\"").add(paramName).add("\");");

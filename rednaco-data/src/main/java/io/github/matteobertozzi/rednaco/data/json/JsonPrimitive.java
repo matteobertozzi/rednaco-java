@@ -60,7 +60,7 @@ public class JsonPrimitive extends JsonElement {
   @Override
   public boolean getAsBoolean() {
     if (isBoolean()) {
-      return ((Boolean) value).booleanValue();
+      return (Boolean) value;
     }
     return StringConverter.toBoolean(getAsString(), false);
   }

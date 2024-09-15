@@ -39,6 +39,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 
+import io.github.matteobertozzi.easerinsights.logging.LogUtil;
 import io.github.matteobertozzi.rednaco.dispatcher.MessageExecutor.ExecutionType;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.NoTraceDump;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.execution.AsyncResult;
@@ -123,8 +124,12 @@ public abstract class AbstractUriMappingProcessor<T> extends AbstractProcessor {
     }
 
     for (final Element element: elementsAnnotatedWith) {
-      final DirectUriRoute route = parseUriMapping(element);
-      processUriMapping(builders, route, element);
+      try {
+        final DirectUriRoute route = parseUriMapping(element);
+        processUriMapping(builders, route, element);
+      } catch (final Throwable e) {
+        fatalError(e, "failed while processing {}", element);
+      }
     }
   }
 
@@ -321,5 +326,9 @@ public abstract class AbstractUriMappingProcessor<T> extends AbstractProcessor {
 
   protected void fatalError(final String msg, final Object... args) {
     processingEnv.getMessager().printMessage(Kind.ERROR, "FATAL ERROR: " + StringFormat.namedFormat(msg, args));
+  }
+
+  protected void fatalError(final Throwable exception, final String msg, final Object... args) {
+    processingEnv.getMessager().printMessage(Kind.ERROR, "FATAL ERROR: " + StringFormat.namedFormat(msg, args) + " - " + exception.getMessage() + "\n" + LogUtil.stackTraceToString(exception));
   }
 }

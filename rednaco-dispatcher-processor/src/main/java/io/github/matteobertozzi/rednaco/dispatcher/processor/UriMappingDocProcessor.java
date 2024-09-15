@@ -86,7 +86,7 @@ public class UriMappingDocProcessor extends AbstractUriMappingProcessor<DocsClas
         out.write(writer.toString());
       }
     } catch (final Throwable e) {
-      fatalError("unable to generate endpoints.yaml: {}", e.getMessage());
+      fatalError(e, "unable to generate endpoints.yaml");
     }
   }
 
@@ -94,6 +94,7 @@ public class UriMappingDocProcessor extends AbstractUriMappingProcessor<DocsClas
     final TypeElement classElement = (TypeElement) element.getEnclosingElement();
     final ExecutableElement methodElement = (ExecutableElement) element;
 
+    //log("process doc {}", route);
     for (final UriMethod method : route.methods()) {
       final String key = method.name() + ' ' + route.uri();
       if (builders.containsKey(key)) {
@@ -253,7 +254,7 @@ public class UriMappingDocProcessor extends AbstractUriMappingProcessor<DocsClas
     } else if (isSetType(type)) {
       final String componentType = parseObjectType(objects, typeArgs.getFirst());
       return "Set[" + componentType + "]";
-    } else if (isMapType(type)) {
+    } else if (isMapType(type) && !typeArgs.isEmpty()) {
       final String keyType = parseObjectType(objects, typeArgs.get(0));
       final String valType = parseObjectType(objects, typeArgs.get(1));
       return "Map[" + keyType + "," + valType + "]";

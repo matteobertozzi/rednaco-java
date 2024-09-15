@@ -25,7 +25,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 
-interface DataFormatMapper {
+public interface DataFormatMapper {
 // ===============================================================================================
   //  JsonNode conversions
   // ===============================================================================================

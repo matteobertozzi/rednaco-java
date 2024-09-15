@@ -81,10 +81,10 @@ class DispatcherExecutor {
       return mapping.executor().execute(ctx, message);
     } catch (final MessageException e) {
       final MessageError error = e.getMessageError();
-      if (error.statusCode() >= 200 && error.statusCode() <= 399) {
+      if (error.statusCode() >= 200 && error.statusCode() <= 399 || error.statusCode() == 404) {
         Logger.error("execution terminated with {status} {} {}: {}", error.status(), message.method(), message.path(), error);
       } else {
-        Logger.error("execution failed {} {}: {}", message.method(), message.path(), error);
+        Logger.error("execution failed with {status} {} {}: {}", error.status(), message.method(), message.path(), error);
       }
       return MessageUtil.newErrorMessage(error);
     } catch (final IllegalArgumentException e) {

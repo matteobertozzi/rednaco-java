@@ -91,18 +91,19 @@ public final class MessageRecorder {
   }
 
   public static void record(final UriMessage request) {
-    Logger.debug("----------\nREQUEST: {} {}\nHEADERS: {}\nBODY: {}\n----------",
+    Logger.debug("----------\nREQUEST: {} {}\nQUERY: {}\nHEADERS: {}\nBODY: {}\n----------",
       request.method(), request.path(),
+      request.queryParams(),
       request.metadata(),
       contentToString(request));
   }
 
   public static void record(final UriMessage request, final Message response, final MessageStats stats) {
+    if (response == null) {
+      Logger.debug(new Exception(), "----------\nRESPONSE: {} {} - NONE\nSTATS: {}\n-----", request.method(), request.path(), stats);
+      return;
+    }
     try {
-      if (response == null) {
-        Logger.debug(new Exception(), "----------\nRESPONSE: {} {} - NONE\nSTATS: {}\n-----", request.method(), request.path(), stats);
-        return;
-      }
       Logger.debug("----------\nRESPONSE: {} {} {}\nSTATS: {}\nHEADERS: {}\nBODY: {}\n----------",
         httpStatus(response), request.method(), request.path(), stats,
         response.metadata(), contentToString(response));
@@ -132,16 +133,19 @@ public final class MessageRecorder {
         if (!message.hasContent()) {
           yield "NO-CONTENT";
         }
+
+        final String contentType = message.metadataValue(MessageUtil.METADATA_CONTENT_TYPE);
         final DataFormat dataFormat = MessageUtil.parseContentType(message.metadata(), null);
         if (dataFormat != null) {
           yield message.convertContent(dataFormat, JsonNode.class).toString();
-        } else if (message.metadataValue(MessageUtil.METADATA_CONTENT_TYPE).equals(MessageUtil.CONTENT_TYPE_TEXT_PLAIN)) {
+        } else if (contentType != null && contentType.equals(MessageUtil.CONTENT_TYPE_TEXT_PLAIN)) {
           yield new String(message.convertContentToBytes());
         }
         yield BytesUtil.toHexString(message.convertContentToBytes());
       }
     };
-    return r.length() > 1024 ? r.substring(0, 1024) : r;
+    final int PACKET_DUMP_LIMIT = 128 << 10;
+    return r.length() > PACKET_DUMP_LIMIT ? r.substring(0, PACKET_DUMP_LIMIT) : r;
   }
 
   private static long millisToHumanDate(final long millis) {
