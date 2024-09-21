@@ -19,6 +19,7 @@ package io.github.matteobertozzi.rednaco.time;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -129,6 +130,14 @@ public final class TimeUtil {
 
     public void setTime(final long value, final TimeUnit unit) {
       this.nanos = unit.toNanos(value);
+    }
+
+    public void setTime(final Instant instant) {
+      setTime(instant.toEpochMilli(), TimeUnit.MILLISECONDS);
+    }
+
+    public void setTime(ZonedDateTime dateTime) {
+      setTime(dateTime.toInstant());
     }
 
     public void incTime(final long value, final TimeUnit unit) {
