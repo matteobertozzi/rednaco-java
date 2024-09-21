@@ -614,14 +614,14 @@ public class Verify {
 
   public static <T> T expectInList(final String name, final T value, final Set<T> list) {
     if (!list.contains(value)) {
-      throw new VerifyArgInvalidArgumentException(name, LOCALIZED_VALUE_NOT_IN_LIST);
+      throw new VerifyArgInvalidArgumentException(name, LOCALIZED_VALUE_NOT_IN_LIST, value, list);
     }
     return value;
   }
 
   public static <T> T expectNotInList(final String name, final T value, final Set<T> list) {
     if (list.contains(value)) {
-      throw new VerifyArgInvalidArgumentException(name, LOCALIZED_VALUE_IN_BLACK_LIST);
+      throw new VerifyArgInvalidArgumentException(name, LOCALIZED_VALUE_IN_BLACK_LIST, value);
     }
     return value;
   }
