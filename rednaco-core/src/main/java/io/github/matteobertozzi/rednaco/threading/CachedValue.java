@@ -23,6 +23,10 @@ public abstract class CachedValue<T> {
     return new AtomicCachedValue<>(cachePeriod, supplier);
   }
 
+  public static <T> CachedValue<T> staticValue(final FailableSupplier<T> supplier) {
+    return new AtomicCachedValue<>(Duration.ofNanos(Long.MAX_VALUE - 1), supplier);
+  }
+
   private static final class AtomicCachedValue<T> extends CachedValue<T> {
     private final AtomicReference<T> cachedValue = new AtomicReference<>(null);
     private final AtomicLong nextRefreshTs = new AtomicLong(0);
