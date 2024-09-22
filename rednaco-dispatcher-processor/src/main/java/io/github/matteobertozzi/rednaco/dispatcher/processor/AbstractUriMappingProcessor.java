@@ -42,9 +42,11 @@ import javax.tools.Diagnostic.Kind;
 import io.github.matteobertozzi.easerinsights.logging.LogUtil;
 import io.github.matteobertozzi.rednaco.dispatcher.MessageExecutor.ExecutionType;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.NoTraceDump;
+import io.github.matteobertozzi.rednaco.dispatcher.annotations.execution.AsyncQueue;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.execution.AsyncResult;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.execution.InlineFast;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.execution.Slow;
+import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.RateLimited;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.uri.UriMapping;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.uri.UriPatternMapping;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.uri.UriPrefix;
@@ -191,10 +193,14 @@ public abstract class AbstractUriMappingProcessor<T> extends AbstractProcessor {
   }
 
   private ExecutionType parseExecutionType(final Element element) {
-    if (element.getAnnotation(InlineFast.class) != null) {
-      return ExecutionType.INLINE_FAST;
+    if (element.getAnnotation(AsyncQueue.class) != null) {
+      return ExecutionType.ASYNC;
+    } else if (element.getAnnotation(RateLimited.class) != null) {
+        return ExecutionType.ASYNC;
     } else if (element.getAnnotation(AsyncResult.class) != null) {
       return ExecutionType.ASYNC;
+    } else if (element.getAnnotation(InlineFast.class) != null) {
+      return ExecutionType.INLINE_FAST;
     } else if (element.getAnnotation(Slow.class) != null) {
       final Slow slow = element.getAnnotation(Slow.class);
       return switch (slow.value()) {

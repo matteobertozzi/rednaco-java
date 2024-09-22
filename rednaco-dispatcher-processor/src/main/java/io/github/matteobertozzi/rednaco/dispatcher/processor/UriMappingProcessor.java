@@ -24,6 +24,7 @@ import java.lang.annotation.Annotation;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -43,11 +44,13 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 
 import io.github.matteobertozzi.rednaco.collections.arrays.ArrayUtil;
+import io.github.matteobertozzi.rednaco.dispatcher.annotations.execution.AsyncQueue;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.message.HeaderValue;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.message.MetaParam;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.message.QueryParam;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.AllowBasicAuth;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.AllowPublicAccess;
+import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.RateLimited;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.RequirePermission;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.session.TokenSession;
 import io.github.matteobertozzi.rednaco.dispatcher.annotations.uri.UriPattern;
@@ -94,21 +97,27 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
     final TypeElement classElement = (TypeElement)element.getEnclosingElement();
     final ExecutableElement methodElement = (ExecutableElement)element;
     final String fullClassName = classElement.getQualifiedName().toString();
+    final AsyncQueue asyncQueue = methodElement.getAnnotation(AsyncQueue.class);
 
     //log("process class method mapping {} {}", uri, execMethodName);
     final DispatchClassBuilder builder = dispatchBuilder.computeIfAbsent(fullClassName, DispatchClassBuilder::new);
     generateMethodMapping(builder, uri, execMethodName, classElement, methodElement);
+    if (asyncQueue != null) {
+      builder.addAsyncQueue(asyncQueue.id(), asyncQueue.concurrency());
+    }
     builderConsumer.accept(builder);
   }
 
   // ====================================================================================================
   //  Dispatch Code Generator
   // ====================================================================================================
+  record AsyncQueueId(String id, long concurrency) {}
   static class DispatchClassBuilder {
     private final ArrayList<PatternUriRoute> variableMappings = new ArrayList<>();
     private final ArrayList<PatternUriRoute> patternMappings = new ArrayList<>();
     private final ArrayList<DirectUriRoute> directMappings = new ArrayList<>();
     private final ArrayList<String> methodsCode = new ArrayList<>();
+    private final HashMap<String, Integer> asyncQueues = new HashMap<>();
 
     private final String fullName;
     private final String name;
@@ -143,6 +152,15 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
       methodsCode.add(code.toString());
     }
 
+    public void addAsyncQueue(final String id, final int concurrency) {
+      if (id.equals(AsyncQueue.SESSION_OWNER_QUEUE)) return;
+
+      final Integer oldConcurrency = asyncQueues.put(id, concurrency);
+      if (oldConcurrency != null && oldConcurrency != concurrency) {
+        throw new IllegalArgumentException("Mismatch concurrency for queue:" + id + " concurrency: " + concurrency + " vs " + oldConcurrency);
+      }
+    }
+
     private void writeSource(final ProcessingEnvironment processingEnv) throws IOException {
       final String resolverClassName = name + "RouteMapping";
 
@@ -157,6 +175,8 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageDispatcher;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageDispatcher.DispatcherProviders;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageDispatcher.DispatcherContext;");
+        out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageDispatcherQueues;");
+        out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageDispatcherQueues.MessageDispatcherQueue;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.MessageExecutor.ExecutionType;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.message.Message;");
         out.addLine("import io.github.matteobertozzi.rednaco.dispatcher.message.MessageMetadata;");
@@ -221,6 +241,16 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
         out.addLine("  @Override public DirectRouteMapping[] directRouteMappings() { return DIRECT_MAPPINGS; }");
         out.addLine("  @Override public PatternRouteMapping[] variableRouteMappings() { return VARIABLE_MAPPINGS; }");
         out.addLine("  @Override public PatternRouteMapping[] patternRouteMappings() { return PATTERN_MAPPINGS; }");
+        out.addLine();
+        out.addLine("  // queues");
+        for (final Map.Entry<String, Integer> entry: asyncQueues.entrySet()) {
+          out.add("  private final MessageDispatcherQueue queue_").add(queueId(entry.getKey())).add(" = ");
+          if (entry.getValue() > 1) {
+            out.add("MessageDispatcherQueues.INSTANCE.concurrent(\"").add(entry.getKey()).add("\", ").add(entry.getValue()).add(");").addLine();
+          } else {
+            out.add("MessageDispatcherQueues.INSTANCE.serial(\"").add(entry.getKey()).add("\");").addLine();
+          }
+        }
 
         for (final String code: methodsCode) {
           out.add(code);
@@ -362,6 +392,20 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
 
     // call the real method
     code.indent().add("// Execute").addLine();
+
+    final RateLimited rateLimited = method.removeAnnotation(RateLimited.class);
+    final AsyncQueue asyncQueue = method.removeAnnotation(AsyncQueue.class);
+
+    if (asyncQueue != null) {
+      code.indent().add("final MessageDispatcherQueue q_async = ");
+      if (asyncQueue.id().equals(AsyncQueue.SESSION_OWNER_QUEUE)) {
+        code.add("MessageDispatcherQueues.INSTANCE.session(p_session).acquire();").addLine();
+      } else {
+        code.add("queue_").add(queueId(asyncQueue.id())).add(".acquire();").addLine();
+      }
+      code.addTry();
+    }
+
     code.indent();
     if (method.hasReturnValue()) {
       code.addVariableDecl(method.returnType(), "res").add(" = ");
@@ -374,6 +418,12 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
       code.add("p_" + p.getSimpleName().toString());
     }
     code.add(");").addLine();
+
+    if (asyncQueue != null) {
+      code.addFinally();
+      code.indent().add("q_async").add(".release();").addLine();
+      code.closeBlock();
+    }
 
     // convert the response
     if (!method.hasReturnValue()) {
@@ -394,9 +444,13 @@ public class UriMappingProcessor extends AbstractUriMappingProcessor<DispatchCla
     }
 
     code.closeBlock();
+
     classBuilder.addMethodCode(code);
   }
 
+  private static String queueId(final String queueId) {
+    return queueId.replace('.', '_').replace('/', '_').replace(' ', '_').replace('-', '_');
+  }
 
   private void processParamMapping(final CodeBuilder code, final VariableElement param, final TypeMirror paramType) {
     final String varName = "p_" + param.getSimpleName();

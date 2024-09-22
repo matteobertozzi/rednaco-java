@@ -25,6 +25,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.SOURCE)
 public @interface AsyncQueue {
+  static final String SESSION_OWNER_QUEUE = ".session.owner.queue";
+
   String id();
   int concurrency() default 1;
 }
