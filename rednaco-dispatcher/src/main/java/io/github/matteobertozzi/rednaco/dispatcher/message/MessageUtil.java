@@ -129,6 +129,10 @@ public final class MessageUtil {
     return parseContentType(accept, defaultFormat, parseFormat);
   }
 
+  public static DataFormat parseContentType(final String contentType, final DataFormat defaultFormat) {
+    return parseContentType(contentType, defaultFormat, MessageUtil::parseTypeToDataFormat);
+  }
+
   public static <T> T parseContentType(final String contentType, final T defaultFormat, final Function<String, T> parseFormat) {
     if (StringUtil.isEmpty(contentType)) return defaultFormat;
 

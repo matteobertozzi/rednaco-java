@@ -135,10 +135,10 @@ public final class MessageRecorder {
         }
 
         final String contentType = message.metadataValue(MessageUtil.METADATA_CONTENT_TYPE);
-        final DataFormat dataFormat = MessageUtil.parseContentType(message.metadata(), null);
+        final DataFormat dataFormat = MessageUtil.parseContentType(contentType, null);
         if (dataFormat != null) {
           yield message.convertContent(dataFormat, JsonNode.class).toString();
-        } else if (contentType != null && contentType.equals(MessageUtil.CONTENT_TYPE_TEXT_PLAIN)) {
+        } else if (contentType != null && contentType.startsWith("text/")) {
           yield new String(message.convertContentToBytes());
         }
         yield BytesUtil.toHexString(message.convertContentToBytes());
