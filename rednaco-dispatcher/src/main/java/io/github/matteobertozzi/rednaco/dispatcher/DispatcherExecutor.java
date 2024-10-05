@@ -40,6 +40,7 @@ import io.github.matteobertozzi.rednaco.dispatcher.message.MessageException;
 import io.github.matteobertozzi.rednaco.dispatcher.message.MessageUtil;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.RoutesMapping.RouteMatcher;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMessage;
+import io.github.matteobertozzi.rednaco.util.Verify.VerifyArgInvalidArgumentException;
 
 class DispatcherExecutor {
   private static final MetricDimension<Heatmap> globalExecTime = Metrics.newCollectorWithDimensions()
@@ -87,8 +88,8 @@ class DispatcherExecutor {
         Logger.error("execution failed with {status} {} {}: {}", error.status(), message.method(), message.path(), error);
       }
       return MessageUtil.newErrorMessage(error);
-    } catch (final IllegalArgumentException e) {
-      Logger.error("illegal argument {} {}: {}", message.method(), message.path(), e.getMessage());
+    } catch (final VerifyArgInvalidArgumentException e) {
+      Logger.error("Verify arg found an illegal argument {} {}: {}", message.method(), message.path(), e.getMessage());
       return MessageUtil.newErrorMessage(MessageError.newBadRequestError(e.getMessage()));
     } catch (final FileNotFoundException e) {
       Logger.error("file not found {} {}: {}", message.method(), message.path(), e.getMessage());
