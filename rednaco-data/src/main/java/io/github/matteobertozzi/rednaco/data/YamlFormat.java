@@ -39,6 +39,11 @@ public class YamlFormat extends DataFormat {
   }
 
   @Override
+  public boolean isBinary() {
+    return false;
+  }
+
+  @Override
   protected DataFormatMapperJackson get() {
     return mapper;
   }

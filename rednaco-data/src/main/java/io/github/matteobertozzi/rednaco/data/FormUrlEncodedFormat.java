@@ -40,6 +40,11 @@ public final class FormUrlEncodedFormat extends DataFormat {
   }
 
   @Override
+  public boolean isBinary() {
+    return false;
+  }
+
+  @Override
   protected DataFormatMapper get() {
     return FormUrlEncodedMapper.INSTANCE;
   }

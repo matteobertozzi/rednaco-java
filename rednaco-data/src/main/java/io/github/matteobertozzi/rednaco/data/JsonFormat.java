@@ -39,6 +39,11 @@ public final class JsonFormat extends DataFormat {
   }
 
   @Override
+  public boolean isBinary() {
+    return false;
+  }
+
+  @Override
   protected DataFormatMapperJackson get() {
     return mapper;
   }

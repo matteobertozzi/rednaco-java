@@ -39,6 +39,11 @@ public class YajbeFormat extends DataFormat {
   }
 
   @Override
+  public boolean isBinary() {
+    return true;
+  }
+
+  @Override
   protected DataFormatMapperJackson get() {
     return mapper;
   }

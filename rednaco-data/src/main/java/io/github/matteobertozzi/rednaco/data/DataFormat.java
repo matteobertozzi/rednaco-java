@@ -46,6 +46,7 @@ public abstract class DataFormat {
 
   public abstract String name();
   public abstract String contentType();
+  public abstract boolean isBinary();
 
   protected abstract DataFormatMapper get();
 
