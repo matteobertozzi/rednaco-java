@@ -20,6 +20,7 @@ package io.github.matteobertozzi.rednaco.dispatcher;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -125,7 +126,7 @@ public final class MessageRecorder {
 
   private static String contentToString(final Message message) {
     final String r = switch (message) {
-      case final TypedMessage<?> objResult -> JsonUtil.toJson(objResult.content());
+      case final TypedMessage<?> objResult -> objectToString(objResult.content());
       case final EmptyMessage emptyResult -> "NO-CONTENT";
       case final ErrorMessage errorResult -> JsonUtil.toJson(errorResult.error());
       case final MessageFile fileResult -> "file:" + fileResult.path();
@@ -146,6 +147,23 @@ public final class MessageRecorder {
     };
     final int PACKET_DUMP_LIMIT = 128 << 10;
     return r.length() > PACKET_DUMP_LIMIT ? r.substring(0, PACKET_DUMP_LIMIT) : r;
+  }
+
+  private static String objectToString(final Object value) {
+    switch (value) {
+      case final Object[] array -> {
+        if (array.length > 100) {
+          return JsonUtil.toJson(Arrays.copyOf(array, 10)) + "...";
+        }
+      }
+      case final List<?> list -> {
+        if (list.size() > 100) {
+          return JsonUtil.toJson(list.subList(0, 10)) + "...";
+        }
+      }
+      default -> {}
+    }
+    return JsonUtil.toJson(value);
   }
 
   private static long millisToHumanDate(final long millis) {
