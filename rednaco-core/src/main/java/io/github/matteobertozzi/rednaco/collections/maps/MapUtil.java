@@ -121,6 +121,25 @@ public final class MapUtil {
   }
 
   // ================================================================================
+  //  New List related
+  // ================================================================================
+  public static <K, V, T> List<T> newListFrom(final Map<K, V> input, final Function<Map.Entry<K, V>, T> mapper) {
+    final ArrayList<T> result = new ArrayList<>(input.size());
+    for (final Map.Entry<K, V> entry: input.entrySet()) {
+      result.add(mapper.apply(entry));
+    }
+    return result;
+  }
+
+  public static <K, V, T> List<T> newListFrom(final Map<K, V> input, final BiFunction<K, V, T> mapper) {
+    final ArrayList<T> result = new ArrayList<>(input.size());
+    for (final Map.Entry<K, V> entry: input.entrySet()) {
+      result.add(mapper.apply(entry.getKey(), entry.getValue()));
+    }
+    return result;
+  }
+
+  // ================================================================================
   //  New Multi Map related
   // ================================================================================
   public static <K, V> Map<K, List<V>> newMultiHashMapFrom(final Collection<V> values, final Function<V, K> keyMapper) {
