@@ -127,5 +127,6 @@ public final class ServicePluginRegistry {
       tableView.addRow(entry.name(), HumansUtil.humanTimeNanos(entry.loadTime()));
     }
     Logger.info("plugin services init took {}", HumansUtil.humanTimeSince(startTime));
+    Logger.debug(tableView.addHumanView(new StringBuilder(1024)).toString());
   }
 }
