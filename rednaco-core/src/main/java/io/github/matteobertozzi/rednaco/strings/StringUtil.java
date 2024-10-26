@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 public final class StringUtil {
@@ -261,13 +262,58 @@ public final class StringUtil {
     final ArrayList<String> items = new ArrayList<>(rawItems.length);
     for (int i = 0; i < rawItems.length; ++i) {
       final String row = StringUtil.trim(rawItems[i]);
-      if (StringUtil.isNotEmpty(row)) {
+      if (isNotEmpty(row)) {
         items.add(row);
       }
     }
     return items.toArray(new String[0]);
   }
 
+  public static List<String> split(final String input, final char delimiter) {
+    if (isEmpty(input)) return List.of();
+
+    final ArrayList<String> items = new ArrayList<>();
+    int start = 0;
+    for (int end = input.indexOf(delimiter); end >= 0; end = input.indexOf(delimiter, start)) {
+      items.add(input.substring(start, end));
+      start = end + 1;
+    }
+    items.add(input.substring(start));
+    return items;
+  }
+
+  public static List<String> splitAndTrim(final String input, final char delimiter) {
+    if (isEmpty(input)) return List.of();
+
+    final ArrayList<String> items = new ArrayList<>();
+    int start = 0;
+    for (int end = input.indexOf(delimiter); end >= 0; end = input.indexOf(delimiter, start)) {
+      items.add(input.substring(start, end).trim());
+      start = end + 1;
+    }
+    items.add(input.substring(start).trim());
+    return items;
+  }
+
+  public static List<String> splitAndTrimSkipEmptyLines(final String input, final char delimiter) {
+    final String itrim = input != null ? input.trim() : null;
+    if (isEmpty(itrim)) return List.of();
+
+    final ArrayList<String> items = new ArrayList<>();
+    int start = 0;
+    for (int end = input.indexOf(delimiter); end >= 0; end = input.indexOf(delimiter, start)) {
+      final String value = input.substring(start, end).trim();
+      if (isNotEmpty(value)) {
+        items.add(value);
+      }
+      start = end + 1;
+    }
+    final String value = input.substring(start).trim();
+    if (isNotEmpty(value)) {
+      items.add(value);
+    }
+    return items;
+  }
 
   // ================================================================================
   // Join helpers

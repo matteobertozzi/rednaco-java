@@ -17,6 +17,8 @@
 
 package io.github.matteobertozzi.rednaco.strings;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -287,16 +289,48 @@ public class TestStringUtil {
     Assertions.assertNull(StringUtil.splitAndTrim(null, "/"));
     Assertions.assertNull(StringUtil.splitAndTrim("", "/"));
     Assertions.assertArrayEquals(new String[] { "abc" }, StringUtil.splitAndTrim("abc", "/"));
-    Assertions.assertArrayEquals(new String[] { "abc", "def" }, StringUtil.splitAndTrim("abc/def", "/"));
-    Assertions.assertArrayEquals(new String[] { "", "abc", "def" }, StringUtil.splitAndTrim("/abc/def/", "/"));
+    Assertions.assertArrayEquals(new String[] { "abc", "def" }, StringUtil.splitAndTrim("abc/ def", "/"));
+    Assertions.assertArrayEquals(new String[] { "", "abc", "def" }, StringUtil.splitAndTrim("/abc/def /", "/"));
     Assertions.assertArrayEquals(new String[] { "", "abc", "", "def" }, StringUtil.splitAndTrim("/abc//def/", "/"));
+    Assertions.assertArrayEquals(new String[] { "", "abc", "", "def" }, StringUtil.splitAndTrim("/abc/ /def/", "/"));
 
     Assertions.assertNull(StringUtil.splitAndTrimSkipEmptyLines(null, "/"));
     Assertions.assertNull(StringUtil.splitAndTrimSkipEmptyLines("", "/"));
     Assertions.assertArrayEquals(new String[] { "abc" }, StringUtil.splitAndTrimSkipEmptyLines("abc", "/"));
-    Assertions.assertArrayEquals(new String[] { "abc", "def" }, StringUtil.splitAndTrimSkipEmptyLines("abc/def", "/"));
-    Assertions.assertArrayEquals(new String[] { "abc", "def" }, StringUtil.splitAndTrimSkipEmptyLines("/abc/def/", "/"));
+    Assertions.assertArrayEquals(new String[] { "abc", "def" }, StringUtil.splitAndTrimSkipEmptyLines("abc/ def", "/"));
+    Assertions.assertArrayEquals(new String[] { "abc", "def" }, StringUtil.splitAndTrimSkipEmptyLines("/abc/def /", "/"));
     Assertions.assertArrayEquals(new String[] { "abc", "def" }, StringUtil.splitAndTrimSkipEmptyLines("/abc//def/", "/"));
+    Assertions.assertArrayEquals(new String[] { "abc", "def" }, StringUtil.splitAndTrimSkipEmptyLines("/abc/ /def/", "/"));
+  }
+
+  @Test
+  public void testSplitAndTrimSingleChar() {
+    Assertions.assertEquals(List.of(), StringUtil.splitAndTrim(null, '/'));
+    Assertions.assertEquals(List.of(), StringUtil.splitAndTrim("", '/'));
+    Assertions.assertEquals(List.of("abc"), StringUtil.splitAndTrim("abc", '/'));
+    Assertions.assertEquals(List.of("abc", "def"), StringUtil.splitAndTrim("abc/ def", '/'));
+    Assertions.assertEquals(List.of("", "abc", "def", ""), StringUtil.splitAndTrim("/abc/def /", '/'));
+    Assertions.assertEquals(List.of("", "abc", "", "def", ""), StringUtil.splitAndTrim("/abc//def/", '/'));
+    Assertions.assertEquals(List.of("", "abc", "", "def", ""), StringUtil.splitAndTrim("/abc/ /def/", '/'));
+
+    Assertions.assertEquals(List.of(), StringUtil.splitAndTrimSkipEmptyLines(null, '/'));
+    Assertions.assertEquals(List.of(), StringUtil.splitAndTrimSkipEmptyLines("", '/'));
+    Assertions.assertEquals(List.of("abc"), StringUtil.splitAndTrimSkipEmptyLines("abc", '/'));
+    Assertions.assertEquals(List.of("abc", "def"), StringUtil.splitAndTrimSkipEmptyLines("abc/ def", '/'));
+    Assertions.assertEquals(List.of("abc", "def"), StringUtil.splitAndTrimSkipEmptyLines("/abc/def /", '/'));
+    Assertions.assertEquals(List.of("abc", "def"), StringUtil.splitAndTrimSkipEmptyLines("/abc//def/", '/'));
+    Assertions.assertEquals(List.of("abc", "def"), StringUtil.splitAndTrimSkipEmptyLines("/abc/ /def/", '/'));
+  }
+
+  @Test
+  public void testSplitSingleChar() {
+    Assertions.assertEquals(List.of(), StringUtil.split(null, '/'));
+    Assertions.assertEquals(List.of(), StringUtil.split("", '/'));
+    Assertions.assertEquals(List.of("abc"), StringUtil.split("abc", '/'));
+    Assertions.assertEquals(List.of("abc", " def"), StringUtil.split("abc/ def", '/'));
+    Assertions.assertEquals(List.of("", "abc", "def ", ""), StringUtil.split("/abc/def /", '/'));
+    Assertions.assertEquals(List.of("", "abc", "", "def", ""), StringUtil.split("/abc//def/", '/'));
+    Assertions.assertEquals(List.of("", "abc", " ", "def", ""), StringUtil.split("/abc/ /def/", '/'));
   }
 
   // ================================================================================
