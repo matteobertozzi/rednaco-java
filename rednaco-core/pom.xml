@@ -6,7 +6,7 @@
 
   <groupId>io.github.matteobertozzi</groupId>
   <artifactId>rednaco-core</artifactId>
-  <version>3.0.1</version>
+  <version>3.0.2</version>
 
   <name>rednaco-core</name>
   <description>REDNACO Commons and Utils for Java.</description>
@@ -32,7 +32,7 @@
   </developers>
 
   <properties>
-    <easer.insights.version>1.0.1</easer.insights.version>
+    <easer.insights.version>1.0.2</easer.insights.version>
 
     <junit.version>5.11.3</junit.version>
 
