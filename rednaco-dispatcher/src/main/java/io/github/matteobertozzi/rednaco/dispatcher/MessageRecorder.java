@@ -17,6 +17,7 @@
 
 package io.github.matteobertozzi.rednaco.dispatcher;
 
+import java.io.OutputStream;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -125,28 +126,38 @@ public final class MessageRecorder {
   }
 
   private static String contentToString(final Message message) {
-    final String r = switch (message) {
-      case final TypedMessage<?> objResult -> objectToString(objResult.content());
-      case final EmptyMessage emptyResult -> "NO-CONTENT";
-      case final ErrorMessage errorResult -> JsonUtil.toJson(errorResult.error());
-      case final MessageFile fileResult -> "file:" + fileResult.path();
-      default -> {
-        if (!message.hasContent()) {
-          yield "NO-CONTENT";
-        }
+    try {
+      final String r = switch (message) {
+        case final TypedMessage<?> objResult -> objectToString(objResult.content());
+        case final EmptyMessage emptyResult -> "NO-CONTENT";
+        case final ErrorMessage errorResult -> JsonUtil.toJson(errorResult.error());
+        case final MessageFile fileResult -> "file:" + fileResult.path();
+        default -> {
+          if (!message.hasContent()) {
+            yield "NO-CONTENT";
+          }
 
-        final String contentType = message.metadataValue(MessageUtil.METADATA_CONTENT_TYPE);
-        final DataFormat dataFormat = MessageUtil.parseContentType(contentType, null);
-        if (dataFormat != null) {
-          yield message.convertContent(dataFormat, JsonNode.class).toString();
-        } else if (contentType != null && contentType.startsWith("text/")) {
-          yield new String(message.convertContentToBytes());
+          final String contentType = message.metadataValue(MessageUtil.METADATA_CONTENT_TYPE);
+          final DataFormat dataFormat = MessageUtil.parseContentType(contentType, null);
+          if (dataFormat != null) {
+            yield message.convertContent(dataFormat, JsonNode.class).toString();
+          } else if (contentType != null && contentType.startsWith("text/")) {
+            yield new String(message.convertContentToBytes());
+          }
+          yield BytesUtil.toHexString(message.convertContentToBytes());
         }
-        yield BytesUtil.toHexString(message.convertContentToBytes());
+      };
+      final int PACKET_DUMP_LIMIT = 128 << 10;
+      return r.length() > PACKET_DUMP_LIMIT ? r.substring(0, PACKET_DUMP_LIMIT) : r;
+    } catch (final Throwable e) {
+      Logger.error(e, "unable to decode content");
+      try (TruncatedOutputStream stream = new TruncatedOutputStream()) {
+        message.writeContentToStream(stream);
+        return "UNABLE-TO-DECODE: " + stream.toUtf8String();
+      } catch (final Throwable ex) {
+        return "UNABLE-TO-DECODE: " + message;
       }
-    };
-    final int PACKET_DUMP_LIMIT = 128 << 10;
-    return r.length() > PACKET_DUMP_LIMIT ? r.substring(0, PACKET_DUMP_LIMIT) : r;
+    }
   }
 
   private static String objectToString(final Object value) {
@@ -164,6 +175,42 @@ public final class MessageRecorder {
       default -> {}
     }
     return JsonUtil.toJson(value);
+  }
+
+  private static final class TruncatedOutputStream extends OutputStream {
+    private final byte[] buffer = new byte[1024];
+    private int bufferOffset = 0;
+
+    @Override
+    public void close() {}
+
+    @Override
+    public void write(final int b) {
+      if (bufferOffset < buffer.length) {
+        buffer[bufferOffset++] = (byte)b;
+      }
+    }
+
+    @Override
+    public void write(final byte[] buf) {
+      write(buf, 0, buf.length);
+    }
+
+    @Override
+    public void write(final byte[] buf, final int off, final int len) {
+      final int wlen = Math.min(buffer.length - bufferOffset, len);
+      if (wlen != 0) {
+        System.arraycopy(buf, off, buffer, bufferOffset, wlen);
+      }
+    }
+
+    public String toUtf8String() {
+      return new String(buffer, 0, bufferOffset);
+    }
+
+    public String toHexString() {
+      return BytesUtil.toHexString(buffer, 0, bufferOffset);
+    }
   }
 
   private static long millisToHumanDate(final long millis) {
