@@ -40,6 +40,7 @@ import io.github.matteobertozzi.rednaco.dispatcher.message.MessageException;
 import io.github.matteobertozzi.rednaco.dispatcher.message.MessageUtil;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.RoutesMapping.RouteMatcher;
 import io.github.matteobertozzi.rednaco.dispatcher.routing.UriMessage;
+import io.github.matteobertozzi.rednaco.strings.StringConverter;
 import io.github.matteobertozzi.rednaco.util.Verify.VerifyArgInvalidArgumentException;
 
 class DispatcherExecutor {
@@ -75,10 +76,15 @@ class DispatcherExecutor {
     return execTask(ctx, mapping, message);
   }
 
+  private final long QUEUE_EXEC_ABORT_NS = TimeUnit.MILLISECONDS.toNanos(StringConverter.toLong(System.getProperty("rednaco.dispatcher.queue.exec.timeout.ms"), 10_000));
   public Message execTask(final DispatcherContext ctx, final RouteMatcher mapping, final UriMessage message) {
     final long startTime = System.nanoTime();
     ctx.stats().execStartNs(startTime);
     try {
+      if ((ctx.stats().queuePushNs() - startTime) > QUEUE_EXEC_ABORT_NS) {
+        return MessageUtil.newErrorMessage(MessageError.newTooManyRequests());
+      }
+
       return mapping.executor().execute(ctx, message);
     } catch (final MessageException e) {
       final MessageError error = e.getMessageError();
