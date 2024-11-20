@@ -23,4 +23,5 @@ import io.github.matteobertozzi.rednaco.dispatcher.message.MessageException;
 public interface AuthSessionFactory {
   Class<? extends AuthSession> sessionClass();
   AuthSession createSession(Message message, Object data) throws MessageException;
+  default Object createSessionKey(final Message message) { return null; }
 }
