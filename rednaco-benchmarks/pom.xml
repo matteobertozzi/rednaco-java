@@ -6,7 +6,7 @@
 
   <groupId>io.github.matteobertozzi</groupId>
   <artifactId>rednaco-benchmarks</artifactId>
-  <version>3.0.2</version>
+  <version>3.0.3</version>
 
   <name>rednaco-benchmarks</name>
   <description>REDNACO Benchmarks</description>
