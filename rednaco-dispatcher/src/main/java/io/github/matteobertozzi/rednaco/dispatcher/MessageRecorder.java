@@ -144,7 +144,7 @@ public final class MessageRecorder {
           } else if (contentType != null && contentType.startsWith("text/")) {
             yield new String(message.convertContentToBytes());
           }
-          yield BytesUtil.toHexString(message.convertContentToBytes());
+          yield "BINARY-CONTENT";
         }
       };
       final int PACKET_DUMP_LIMIT = 128 << 10;
