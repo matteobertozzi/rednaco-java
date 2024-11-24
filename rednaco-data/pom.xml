@@ -6,7 +6,7 @@
 
   <groupId>io.github.matteobertozzi</groupId>
   <artifactId>rednaco-data</artifactId>
-  <version>3.0.3</version>
+  <version>3.0.4</version>
 
   <name>rednaco-data</name>
   <description>REDNACO Data Format Utils for Java.</description>
