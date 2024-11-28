@@ -31,6 +31,7 @@ import io.github.matteobertozzi.easerinsights.metrics.Metrics;
 import io.github.matteobertozzi.easerinsights.metrics.collectors.Heatmap;
 import io.github.matteobertozzi.easerinsights.metrics.collectors.Histogram;
 import io.github.matteobertozzi.easerinsights.metrics.collectors.TimeRangeDrag;
+import io.github.matteobertozzi.easerinsights.metrics.collectors.TopK;
 import io.github.matteobertozzi.easerinsights.tracing.Span;
 import io.github.matteobertozzi.easerinsights.tracing.Tracer;
 import io.github.matteobertozzi.rednaco.dispatcher.MessageDispatcher.DispatcherContext;
@@ -51,6 +52,13 @@ class DispatcherExecutor {
     .label("Message Dispatcher Exec Time")
     .register(() -> Heatmap.newMultiThreaded(60, 1, TimeUnit.MINUTES, Histogram.DEFAULT_DURATION_BOUNDS_NS));
 
+  private static final MetricDimension<TopK> globalTopTimes = Metrics.newCollectorWithDimensions()
+    .dimensions("type")
+    .unit(DatumUnit.NANOSECONDS)
+    .name("message.dispatcher.exec.top.times")
+    .label("Message Dispatcher Exec Top Times")
+    .register(() -> TopK.newMultiThreaded(32, 60, 1, TimeUnit.MINUTES));
+
   private static final MetricDimension<TimeRangeDrag> globalQueueLength = Metrics.newCollectorWithDimensions()
     .dimensions("type")
     .unit(DatumUnit.COUNT)
@@ -66,10 +74,12 @@ class DispatcherExecutor {
     return new DispatcherExecutorService(name, executors);
   }
 
+  private final TopK topExecTimes;
   private final Heatmap execTime;
 
   private DispatcherExecutor(final String name) {
     this.execTime = globalExecTime.get(name);
+    this.topExecTimes = globalTopTimes.get(name);
   }
 
   public Message submit(final DispatcherContext ctx, final RouteMatcher mapping, final UriMessage message) {
@@ -106,6 +116,7 @@ class DispatcherExecutor {
     } finally {
       ctx.stats().setExecEndNs(System.nanoTime());
       execTime.sample(ctx.stats().execTimeNs());
+      topExecTimes.sample(message.method() + " " + message.path(), ctx.stats().execTimeNs());
     }
   }
 

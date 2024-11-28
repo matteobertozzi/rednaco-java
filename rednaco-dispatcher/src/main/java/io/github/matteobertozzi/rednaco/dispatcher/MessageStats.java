@@ -17,6 +17,8 @@
 
 package io.github.matteobertozzi.rednaco.dispatcher;
 
+import io.github.matteobertozzi.rednaco.strings.HumansUtil;
+
 public class MessageStats {
   private long firstByteNs;   // First Byte Received
   private long headersNs;     // Headers Received
@@ -74,6 +76,8 @@ public class MessageStats {
   public String toString() {
     return "MessageStats [firstByteNs=" + firstByteNs + ", headersNs=" + headersNs + ", fullMsgNs=" + fullMsgNs
         + ", queuePushNs=" + queuePushNs + ", paramParseNs=" + paramParseNs + ", execStartNs=" + execStartNs
-        + ", execEndNs=" + execEndNs + ", lastByteWrNs=" + lastByteWrNs + "]";
+        + ", execEndNs=" + execEndNs + ", lastByteWrNs=" + lastByteWrNs
+        + ", execTime=" + HumansUtil.humanTimeNanos(execEndNs - execStartNs)
+        + ", latency=" + HumansUtil.humanTimeNanos(execEndNs - queuePushNs) + "]";
   }
 }
