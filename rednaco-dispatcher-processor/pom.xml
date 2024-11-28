@@ -6,7 +6,7 @@
 
   <groupId>io.github.matteobertozzi</groupId>
   <artifactId>rednaco-dispatcher-processor</artifactId>
-  <version>3.0.4</version>
+  <version>3.0.5</version>
 
   <name>rednaco-dispatcher-processor</name>
   <description>REDNACO Dispatcher Processor</description>

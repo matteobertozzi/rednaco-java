@@ -6,7 +6,7 @@
 
   <groupId>io.github.matteobertozzi</groupId>
   <artifactId>rednaco-data</artifactId>
-  <version>3.0.4</version>
+  <version>3.0.5</version>
 
   <name>rednaco-data</name>
   <description>REDNACO Data Format Utils for Java.</description>
@@ -32,7 +32,7 @@
   </developers>
 
   <properties>
-    <jackson.version>2.18.1</jackson.version>
+    <jackson.version>2.18.2</jackson.version>
 
     <junit.version>5.11.3</junit.version>
 

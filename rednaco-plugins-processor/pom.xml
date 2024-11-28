@@ -6,7 +6,7 @@
 
   <groupId>io.github.matteobertozzi</groupId>
   <artifactId>rednaco-plugins-processor</artifactId>
-  <version>3.0.4</version>
+  <version>3.0.5</version>
 
   <name>rednaco-plugins-processor</name>
   <description>REDNACO Plugins Processor</description>
